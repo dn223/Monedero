@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'live_widgets.dart';
 import 'preview_widgets.dart';
 
 /// Vista de diseño del titular: tarjeta, QR, saldo, historial y acciones.
@@ -17,19 +18,7 @@ class HolderPreviewPage extends StatelessWidget {
       title: 'Hola, Ana',
       icon: Icons.person_rounded,
       children: [
-        const VirtualCard(
-          number: SampleData.cardNumber,
-          holder: SampleData.holderName,
-          balanceCents: SampleData.balanceCents,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Icon(Icons.check_circle_rounded, size: 16, color: scheme.primary),
-            const SizedBox(width: 6),
-            const Flexible(child: Text('Saldo actualizado hace un momento')),
-          ],
-        ),
+        const LiveHolderPanel(),
         const SectionTitle('Mostrar en caja'),
         Card(
           child: Padding(
@@ -59,14 +48,6 @@ class HolderPreviewPage extends StatelessWidget {
             ),
           ),
         ),
-        const SectionTitle('Movimientos'),
-        for (final (type, amount, after, date) in SampleData.transactions)
-          TransactionTile(
-            type: type,
-            amountCents: amount,
-            balanceAfterCents: after,
-            when: date,
-          ),
         const SectionTitle('Mi tarjeta'),
         OutlinedButton.icon(
           onPressed: () {},

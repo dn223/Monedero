@@ -15,6 +15,15 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
   const cashier = {Role.cashier, Role.admin};
   const admin = {Role.admin};
 
+  void requireDemo() {
+    if (!config.demoMode) {
+      throw const ApiException(
+        ApiErrorCode.demoModeDisabled,
+        'El modo demo está desactivado.',
+      );
+    }
+  }
+
   Principal auth(Request r, Set<Role> roles) => requireRole(r, s.tokens, roles);
 
   // --- Autenticación -------------------------------------------------------
@@ -239,5 +248,54 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       return jsonResponse({
         'items': await s.cards.search('', activeOnly: true),
       });
+    })
+    // Sesiones sin contraseña SOLO en modo demo (exposición). Con
+    // DEMO_MODE=false responden 403.
+    ..post('/v1/demo/cashier-session', (Request r) async {
+      requireDemo();
+      return jsonResponse({
+        ...await s.auth.demoStaffSession(Role.cashier),
+        ...await s.terminals.demoTerminal(),
+      });
+    })
+    ..post('/v1/demo/holder-session', (Request r) async {
+      requireDemo();
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.demoHolderSession(requireString(b, 'email')),
+      );
+    })
+    ..get('/v1/demo/terminal-activity/<payCode>', (
+      Request r,
+      String payCode,
+    ) async {
+      requireDemo();
+      auth(r, cashier);
+      return jsonResponse({
+        'items': await s.terminals.activityByPayCode(payCode),
+      });
+    })
+    // --- Pago del titular en caja -------------------------------------------
+    ..post('/v1/me/payments', (Request r) async {
+      final p = auth(r, holder);
+      final key = requireIdempotencyKey(r);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.ledger.payAtTerminal(
+          cardholderId: p.id,
+          payCode: requireString(b, 'terminalCode'),
+          amountCents: requireCents(b, 'amountCents'),
+          idempotencyKey: key,
+          pin: b['pin'] as String?,
+        ),
+        status: 201,
+      );
+    })
+    ..get('/v1/cards/terminal-activity', (Request r) async {
+      auth(r, cashier);
+      final terminalId = await s.terminals.authenticate(
+        r.headers['x-terminal-token'],
+      );
+      return jsonResponse({'items': await s.terminals.activity(terminalId)});
     });
 }

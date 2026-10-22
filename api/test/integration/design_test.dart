@@ -276,6 +276,54 @@ void main() {
       expect((noKey.$2['error']! as Map)['code'], 'IDEMPOTENCY_KEY_REQUIRED');
     });
 
+    test('el titular paga con el código de caja y recibe el aviso por '
+        'correo', () async {
+      const email = 'pago-caja@test.local';
+      final (cardId, card, holderToken) = await desk.newActiveCard(email);
+      await desk.op('top-ups', card, 2000);
+
+      final (_, session) = await h.call('POST', '/v1/demo/cashier-session');
+      final payCode = session['payCode']! as String;
+      expect(payCode, matches(RegExp(r'^\d{6}$')));
+
+      final (status, receipt) = await h.call(
+        'POST',
+        '/v1/me/payments',
+        body: {'terminalCode': payCode, 'amountCents': 735},
+        token: holderToken,
+        key: const Uuid().v4(),
+      );
+      expect(status, 201);
+      expect(receipt['balanceAfterCents'], 1265);
+      expect((await h.cardState(cardId)).difference, 0);
+      expect(
+        h.mailer.sent.last,
+        isA<({String to, String subject, String text})>()
+            .having((m) => m.to, 'to', email)
+            .having((m) => m.text, 'text', contains(r'$12.65')),
+      );
+
+      final (_, activity) = await h.call(
+        'GET',
+        '/v1/cards/terminal-activity',
+        token: session['accessToken']! as String,
+        terminal: session['terminalToken']! as String,
+      );
+      expect(
+        (activity['items']! as List).first,
+        containsPair('amountCents', 735),
+      );
+
+      final wrong = await h.call(
+        'POST',
+        '/v1/me/payments',
+        body: {'terminalCode': '000000', 'amountCents': 100},
+        token: holderToken,
+        key: const Uuid().v4(),
+      );
+      expect(wrong.$1, 404);
+    });
+
     test('la conciliación global queda en cero', () async {
       final (status, body) = await h.call(
         'GET',

@@ -9,9 +9,11 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | 1 | Esqueleto del monorepo, Docker Compose, scripts `tool/`, documentación base, `AGENTS.md`, CI | ✅ Terminada |
 | 2 | Migraciones, roles y permisos, `core` (Luhn, montos, firma), API completa, 5 pruebas obligatorias, `migrate`/`seed`/`reset_demo`, `tool/demo.dart` | ✅ Terminada (pendiente de aprobación) |
 | 3 | **Vistas de diseño** de titular, caja y administración (mismo estilo, datos de ejemplo, sin conectar) | ✅ Terminada (pendiente de aprobación) |
-| 4 | Conectar titular y caja a la API: inicio de sesión, saldo con caché "no actualizado", QR real, `CardReader` (QR, lista demo, número), cobro con PIN, recarga, comprobante, pérdida y PIN | ⏳ Siguiente |
-| 5 | Conectar administración a la API: emitir y entregar, búsquedas, movimientos, conciliación, terminales, reposición y "Reiniciar demo" | Pendiente |
-| 6 | App en Android (emulador y teléfono), pulido, guion final con capturas y `deploy/` preparado | Pendiente |
+| 4 | Conectar toda la app a la API: inicio de sesión real de los 3 roles, titular (registro, saldo, historial, QR real, pérdida, PIN), caja (QR con cámara, lista demo, número, cobro y recarga) | ⏳ Siguiente (ya hay un avance: pago del titular con código de caja, en vivo) |
+| 5 | Administración conectada (emitir, entregar, reponer, buscar, conciliación, cajas, reiniciar demo) y endurecimiento: renovación de sesión, límites de solicitudes | Pendiente |
+| 6 | App Android lista para instalar: ícono y nombre definitivos, APK firmado (release), pruebas en varios celulares | Pendiente |
+| 7 | Tarjetas físicas NFC: prueba de celulares, `NfcMifareCardReader`, emisión escribiendo el chip (alternativa NTAG215) | Pendiente |
+| 8 | Producción: VPS Contabo, dominio, HTTPS con Caddy, PostgreSQL con respaldos pgBackRest → Backblaze B2, correo real, `DEMO_MODE=false`, monitoreo; el APK apunta a `https://<dominio>` | Pendiente |
 
 ## Pendientes priorizados
 

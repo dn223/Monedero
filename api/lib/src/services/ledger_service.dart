@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:monedero_core/monedero_core.dart';
 import 'package:postgres/postgres.dart';
 
 import '../config.dart';
 import '../db/database.dart';
 import '../errors.dart';
+import '../mailer.dart';
 import '../security.dart';
 
 /// Recargas y débitos: **las únicas operaciones de caja que mueven dinero.**
@@ -13,7 +16,7 @@ import '../security.dart';
 /// actualiza el saldo e inserta el movimiento con su `Idempotency-Key`.
 class LedgerService {
   /// Crea el servicio.
-  LedgerService(this.pool, this.config, this.hasher);
+  LedgerService(this.pool, this.config, this.hasher, this.mailer);
 
   /// Pool con el usuario de permisos mínimos.
   final Pool<void> pool;
@@ -24,13 +27,16 @@ class LedgerService {
   /// Verificador de PIN.
   final PasswordHasher hasher;
 
+  /// Avisos de movimiento al titular.
+  final Mailer mailer;
+
   /// Recarga [amountCents] (múltiplo de $5) en la tarjeta [card].
   Future<Map<String, Object?>> topUp({
     required CardCredentials card,
     required int amountCents,
     required String idempotencyKey,
     required String terminalId,
-    required String staffId,
+    required String? staffId,
   }) {
     if (!Money.isValidTopUp(amountCents)) {
       throw const ApiException(
@@ -54,7 +60,7 @@ class LedgerService {
     required int amountCents,
     required String idempotencyKey,
     required String terminalId,
-    required String staffId,
+    required String? staffId,
     String? pin,
   }) async {
     if (!Money.isValidDebitAmount(amountCents)) {
@@ -84,6 +90,54 @@ class LedgerService {
     );
   }
 
+  /// El titular paga desde su app en la caja con código [payCode].
+  ///
+  /// Usa su tarjeta `ACTIVE` y pasa por el mismo [debit]: firma, PIN sobre
+  /// el límite, transacción con `FOR UPDATE` e idempotencia.
+  Future<Map<String, Object?>> payAtTerminal({
+    required String cardholderId,
+    required String payCode,
+    required int amountCents,
+    required String idempotencyKey,
+    String? pin,
+  }) async {
+    final terminal = (await query(
+      pool,
+      'SELECT id FROM terminals WHERE pay_code = @c AND active',
+      {'c': payCode.replaceAll(' ', '')},
+    )).firstOrNull;
+    if (terminal == null) {
+      throw const ApiException(
+        ApiErrorCode.notFound,
+        'Código de caja no válido.',
+      );
+    }
+    final card = (await query(
+      pool,
+      'SELECT number, uid, signature FROM cards WHERE cardholder_id = @h:uuid '
+      "AND status = 'ACTIVE'",
+      {'h': cardholderId},
+    )).firstOrNull;
+    if (card == null) {
+      throw const ApiException(
+        ApiErrorCode.cardNotActive,
+        'No tienes una tarjeta activa.',
+      );
+    }
+    return debit(
+      card: CardCredentials(
+        number: card['number'] as String,
+        uid: card['uid'] as String,
+        signature: card['signature'] as String,
+      ),
+      amountCents: amountCents,
+      idempotencyKey: idempotencyKey,
+      terminalId: terminal['id'] as String,
+      staffId: null,
+      pin: pin,
+    );
+  }
+
   /// Valida número, UID y firma de la tarjeta sin tocar la base.
   void _verifySignature(CardCredentials card) {
     final valid =
@@ -108,11 +162,12 @@ class LedgerService {
     int amountCents,
     String key,
     String terminalId,
-    String staffId,
+    String? staffId,
   ) async {
     _verifySignature(card);
+    var created = false;
     try {
-      return await pool.runTx((tx) async {
+      final result = await pool.runTx((tx) async {
         // Regla 4: bloquea la fila; otras operaciones sobre la misma tarjeta
         // esperan aquí hasta el COMMIT.
         final rows = await query(
@@ -179,8 +234,12 @@ class LedgerService {
             's': staffId,
           },
         );
+        created = true;
         return receipt(inserted.first, row['number'] as String);
       });
+      // Aviso por correo solo para movimientos nuevos (no al repetir clave).
+      if (created) await _notify(card.number, type, amountCents, result);
+      return result;
     } on Object catch (error) {
       // Carrera con la misma clave en otra tarjeta: la base la detiene.
       if (!isUniqueViolation(error)) rethrow;
@@ -192,6 +251,40 @@ class LedgerService {
         {'n': card.number},
       )).firstOrNull?['id'];
       return _replayOrReject(replay, cardId as String?, type, amountCents);
+    }
+  }
+
+  /// Envía al titular el aviso del movimiento. Un fallo del correo nunca
+  /// revierte ni bloquea la operación, que ya quedó confirmada.
+  Future<void> _notify(
+    String number,
+    TransactionType type,
+    int amountCents,
+    Map<String, Object?> receipt,
+  ) async {
+    try {
+      final holder = (await query(
+        pool,
+        'SELECT h.email::text AS email, h.full_name FROM cardholders h '
+        'JOIN cards c ON c.cardholder_id = h.id WHERE c.number = @n',
+        {'n': number},
+      )).firstOrNull;
+      if (holder == null) return;
+      final what = type == TransactionType.topUp ? 'una recarga' : 'un pago';
+      await mailer.send(
+        to: holder['email'] as String,
+        subject:
+            'Movimiento en tu tarjeta: ${type == TransactionType.topUp ? '+' : '-'}'
+            '${Money.format(amountCents)}',
+        text:
+            'Hola ${holder['full_name']},\n\n'
+            'Se registró $what de ${Money.format(amountCents)} en tu tarjeta '
+            '${CardNumber.masked(number)}.\n'
+            'Saldo actual: ${Money.format(receipt['balanceAfterCents']! as int)}.\n\n'
+            'Si no reconoces este movimiento, reporta la pérdida de tu tarjeta.',
+      );
+    } on Object catch (error) {
+      stderr.writeln('No se pudo enviar el aviso de movimiento: $error');
     }
   }
 

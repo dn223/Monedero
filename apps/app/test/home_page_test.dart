@@ -48,7 +48,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     for (final (button, expected) in [
-      ('Titular', 'Saldo disponible'),
+      ('Titular', 'Mostrar en caja'),
       ('Caja', 'Escanear QR'),
       ('Administración', 'Emitir tarjeta'),
     ]) {

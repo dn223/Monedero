@@ -98,8 +98,8 @@ class PreviewScaffold extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Vista de diseño con datos de ejemplo. '
-                          'La lógica ya funciona en la API.',
+                          'Lo marcado "en vivo" usa la API real; '
+                          'lo demás es vista de diseño con datos de ejemplo.',
                           style: TextStyle(color: scheme.onSecondaryContainer),
                         ),
                       ),

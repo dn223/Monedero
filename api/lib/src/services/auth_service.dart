@@ -148,6 +148,41 @@ class AuthService {
     return _session(principal, staff['full_name'] as String);
   }
 
+  /// Solo modo demo: sesión del primer personal activo con [role].
+  Future<Map<String, Object?>> demoStaffSession(Role role) async {
+    final staff = (await query(
+      pool,
+      'SELECT id, full_name FROM staff_users WHERE role = @r AND active '
+      'ORDER BY created_at LIMIT 1',
+      {'r': role.wireName},
+    )).firstOrNull;
+    if (staff == null) {
+      throw const ApiException(
+        ApiErrorCode.notFound,
+        'No hay personal de demostración. Ejecuta tool/seed.dart.',
+      );
+    }
+    return _session(
+      Principal(id: staff['id'] as String, role: role),
+      staff['full_name'] as String,
+    );
+  }
+
+  /// Solo modo demo: sesión del titular verificado con [email].
+  Future<Map<String, Object?>> demoHolderSession(String email) async {
+    final holder = await _holderByEmail(email);
+    if (holder == null || holder['email_verified_at'] == null) {
+      throw const ApiException(
+        ApiErrorCode.notFound,
+        'Titular de demostración no encontrado.',
+      );
+    }
+    return _session(
+      Principal(id: holder['id'] as String, role: Role.cardholder),
+      holder['full_name'] as String,
+    );
+  }
+
   /// Cambia el PIN del titular verificando el actual.
   Future<void> changePin(
     String cardholderId,

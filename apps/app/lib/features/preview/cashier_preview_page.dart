@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monedero_core/monedero_core.dart';
 
+import 'live_widgets.dart';
 import 'preview_widgets.dart';
 
 /// Vista de diseño de la caja: leer tarjeta, cobrar, recargar y comprobante.
@@ -27,6 +28,9 @@ class _CashierPreviewPageState extends State<CashierPreviewPage> {
       title: 'Caja 1',
       icon: Icons.point_of_sale_rounded,
       children: [
+        const SectionTitle('Cobro con código (en vivo)'),
+        const LiveCashierPanel(),
+        const Divider(height: 40),
         const SectionTitle('1. Acercar la tarjeta'),
         SegmentedButton<int>(
           segments: const [

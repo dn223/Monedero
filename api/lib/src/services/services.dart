@@ -27,7 +27,7 @@ class Services {
       tokens: tokens,
       auth: auth,
       cards: cards,
-      ledger: LedgerService(pool, config, hasher),
+      ledger: LedgerService(pool, config, hasher, mailer),
       replacements: ReplacementService(
         pool,
         cards,
