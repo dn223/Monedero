@@ -9,7 +9,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 ### Agregado — Fase 3 (vistas de diseño)
 - Vistas de titular (`/titular`), caja (`/caja`) y administración (`/admin`) con datos de ejemplo, en el estilo de la app; botones de rol habilitados en la pantalla inicial.
 - Fases reordenadas: 4 conecta titular y caja, 5 conecta administración, 6 Android, pulido y despliegue.
-- Guion de exposición en PDF (`docs/guion-exposicion.pdf`).
+- Presentación (`docs/presentacion.pdf`) y guía del proyecto para el equipo (`docs/guia-del-proyecto.pdf`).
 
 ### Agregado — Fase 2 (base de datos y API)
 - `core`: `Money` (recarga múltiplo de $5, formato USD, parseo sin `double`), `CardNumber` (Luhn y generación con prefijo), `CardSignature` (UID simulado y HMAC-SHA256 truncado), `CardStatus`, `TransactionType`, `Role` y nuevos `ApiErrorCode`.
