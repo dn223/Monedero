@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 Todos los cambios notables de este proyecto se documentan aquÃ­.
 
