@@ -8,16 +8,16 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 |---|---|---|
 | 1 | Esqueleto del monorepo, Docker Compose, scripts `tool/`, documentación base, `AGENTS.md`, CI | ✅ Terminada |
 | 2 | Migraciones, roles y permisos, `core` (Luhn, montos, firma), API completa, 5 pruebas obligatorias, `migrate`/`seed`/`reset_demo`, `tool/demo.dart` | ✅ Terminada (pendiente de aprobación) |
-| 3 | App del titular: registro con código, saldo, historial, tarjeta virtual con QR, pérdida, reposición, cambio de PIN | ⏳ Siguiente |
-| 4 | Caja y simulación de tarjetas: `CardReader`, QR, lista demo, número manual, cobro con PIN, recarga, comprobante | Pendiente |
-| 5 | Administración web: emitir, buscar, movimientos, conciliación, terminales, reiniciar demo | Pendiente |
-| 6 | Pulido, guion de demo ensayado, capturas, `deploy/` preparado | Pendiente |
+| 3 | **Vistas de diseño** de titular, caja y administración (mismo estilo, datos de ejemplo, sin conectar) | ✅ Terminada (pendiente de aprobación) |
+| 4 | Conectar titular y caja a la API: inicio de sesión, saldo con caché "no actualizado", QR real, `CardReader` (QR, lista demo, número), cobro con PIN, recarga, comprobante, pérdida y PIN | ⏳ Siguiente |
+| 5 | Conectar administración a la API: emitir y entregar, búsquedas, movimientos, conciliación, terminales, reposición y "Reiniciar demo" | Pendiente |
+| 6 | App en Android (emulador y teléfono), pulido, guion final con capturas y `deploy/` preparado | Pendiente |
 
 ## Pendientes priorizados
 
 | Prioridad | Pendiente | Notas |
 |---|---|---|
-| P0 | Fases 2 a 6 | Ver tabla anterior |
+| P0 | Fases 4 a 6 | Ver tabla anterior |
 | P0 | Proteger `main` en GitHub e invitar al equipo | Repositorio: `dn223/Monedero` |
 | P1 | Renovación de tokens (refresh) | Hoy el JWT dura 15 min |
 | P0 | Llenar la tabla de responsables en `AGENTS.md` | Equipo |

@@ -32,7 +32,34 @@ void main() {
     expect(find.text(Brand.appName), findsOneWidget);
     expect(find.text('API conectada'), findsOneWidget);
     expect(find.textContaining('modo demo activo'), findsOneWidget);
-    expect(find.text('Titular (fase 3)'), findsOneWidget);
+    expect(find.text('Titular'), findsOneWidget);
+  });
+
+  testWidgets('los tres roles abren su vista', (tester) async {
+    final client = MockClient(
+      (request) async => http.Response(
+        jsonEncode({'status': 'ok', 'version': '0.2.0', 'demoMode': true}),
+        200,
+      ),
+    );
+    tester.view
+      ..physicalSize = const Size(1200, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    for (final (button, expected) in [
+      ('Titular', 'Saldo disponible'),
+      ('Caja', 'Escanear QR'),
+      ('Administración', 'Emitir tarjeta'),
+    ]) {
+      await tester.pumpWidget(_appWith(client));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(button));
+      await tester.pumpAndSettle();
+      expect(find.text(expected), findsWidgets, reason: button);
+      await tester.tap(find.byTooltip('Inicio'));
+      await tester.pumpAndSettle();
+    }
   });
 
   testWidgets('avisa cuando la API no responde', (tester) async {

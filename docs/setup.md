@@ -225,6 +225,7 @@ No depende de la red ni del firewall.
 | "Virtualization support not detected" | Virtualización apagada en BIOS | Activar VT-x / AMD-V |
 | El instalador de Docker falla con "no se encuentra la ruta" al lanzarse como administrador | Ruta del instalador demasiado larga | Copia el `.exe` a `C:\Temp` y ejecútalo de ahí |
 | `port is already allocated` en 5432/8080/8025 | Otro programa usa el puerto (por ejemplo, un PostgreSQL instalado) | Cambia `POSTGRES_PORT`/`API_PORT`/`MAILPIT_UI_PORT` en `.env` |
+| `flutter run -d chrome` falla con "Failed to establish connection with the application instance in Chrome" | El depurador no logra conectarse con Chrome (firewall o Chrome abierto desde otra herramienta) | Sirve la app sin depurador: `flutter run -d web-server --release --web-port 5000 --web-hostname localhost` y abre <http://localhost:5000> en tu navegador |
 | La app web dice "Sin conexión con la API" | La app no corre en el puerto 5000 o la API está apagada | `flutter run -d chrome --web-port 5000`; `dart run tool/up.dart` |
 | El teléfono no llega a la API | Red aislada o firewall | Usa `adb reverse` (sección 5) |
 | `version solving failed … test_api` | Se subió `test` por encima de lo que fija Flutter | Mantén `test: ^1.31.1` hasta actualizar Flutter |

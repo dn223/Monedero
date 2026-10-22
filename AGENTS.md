@@ -188,12 +188,12 @@ Y actualiza la sección 9 de este archivo.
 - Base: migración `0001` con `CHECK`, trigger de solo inserción, permisos mínimos para `monedero_app` y vista `card_reconciliation`. Migrador con checksum.
 - API completa (ver `docs/api.md`): registro y verificación por correo (Mailpit), JWT por rol, terminales con credencial, emisión/entrega, recarga y cobro idempotentes con `FOR UPDATE` y PIN sobre $25, pérdida con código, reposición atómica, conciliación y lista demo.
 - Las 5 pruebas obligatorias en verde contra PostgreSQL real; `tool/demo.dart` recorre los 8 pasos de la demo.
-- La app Flutter sigue con solo la pantalla inicial.
+- Fase 3 (fases reordenadas el 2026-10-22): vistas de diseño de titular (`/titular`), caja (`/caja`) y administración (`/admin`) en `apps/app/lib/features/preview/`, con datos de ejemplo y sin conectar a la API.
 
-**Siguientes pasos** (Fase 3 — app del titular):
-1. Inicio de sesión (titular, cajero, administración) con el JWT; guardar sesión.
-2. Titular: registro con código, saldo (caché "no actualizado"), historial, tarjeta visual con QR de `credentials`.
-3. Reporte de pérdida con código, cambio de PIN.
+**Siguientes pasos** (Fase 4 — conectar titular y caja):
+1. Inicio de sesión con el JWT y sesión guardada; reemplazar `SampleData` por datos de la API.
+2. Titular: saldo (caché "no actualizado"), historial, QR real de `credentials`, pérdida con código y cambio de PIN.
+3. Caja: `CardReader` + `SimulatedCardReader` (QR con cámara, lista demo, número), cobro con PIN, recarga y comprobante.
 4. Pruebas de widgets de esos flujos.
 5. Pendiente técnico: renovación de tokens (refresh) y botón "Reiniciar demo" vía API (Fase 5).
 

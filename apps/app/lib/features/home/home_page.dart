@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../brand/brand.dart';
 import '../../core/api/api_client.dart';
@@ -7,7 +8,7 @@ import '../../core/config/app_config.dart';
 import '../../core/providers.dart';
 
 /// Pantalla inicial: presenta la marca, el estado de la API y la selección
-/// de rol (los roles se habilitan en las fases 3 a 5).
+/// de rol (vistas de diseño de titular, caja y administración).
 class HomePage extends ConsumerWidget {
   /// Crea la pantalla inicial.
   const HomePage({super.key});
@@ -51,19 +52,19 @@ class HomePage extends ConsumerWidget {
                   const _RoleButton(
                     icon: Icons.person_rounded,
                     label: 'Titular',
-                    pendingPhase: 3,
+                    route: '/titular',
                   ),
                   const SizedBox(height: 8),
                   const _RoleButton(
                     icon: Icons.point_of_sale_rounded,
                     label: 'Caja',
-                    pendingPhase: 4,
+                    route: '/caja',
                   ),
                   const SizedBox(height: 8),
                   const _RoleButton(
                     icon: Icons.admin_panel_settings_rounded,
                     label: 'Administración',
-                    pendingPhase: 5,
+                    route: '/admin',
                   ),
                   const SizedBox(height: 32),
                   Text(
@@ -135,20 +136,18 @@ class _RoleButton extends StatelessWidget {
   const _RoleButton({
     required this.icon,
     required this.label,
-    required this.pendingPhase,
+    required this.route,
   });
 
   final IconData icon;
   final String label;
-  final int pendingPhase;
+  final String route;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: 'Disponible en la fase $pendingPhase',
-    child: OutlinedButton.icon(
-      onPressed: null,
-      icon: Icon(icon),
-      label: Text('$label (fase $pendingPhase)'),
-    ),
+  Widget build(BuildContext context) => FilledButton.tonalIcon(
+    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+    onPressed: () => context.go(route),
+    icon: Icon(icon),
+    label: Text(label),
   );
 }

@@ -17,6 +17,7 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 ## 2026-10-22 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo:**
+- (Tarde) Fases reordenadas a pedido del equipo: la Fase 3 pasa a ser **vistas de diseño** de los 3 roles con datos de ejemplo, para mostrarlas en la exposición; la conexión real con la API queda para las fases 4 y 5, y Android para la 6. Guion de exposición en PDF.
 - Repositorio publicado en GitHub: `dn223/Monedero` (`main` = Fase 1).
 - Fase 2 completa en la rama `feat/fase-2-api`: `core` (dinero, Luhn, firma), migración inicial con barreras en la base, migrador con checksum, API completa y sembrado de demo.
 - Las 5 pruebas obligatorias pasan contra PostgreSQL real (16 pruebas de API, 15 de `core`).
