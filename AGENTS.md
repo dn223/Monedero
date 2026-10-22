@@ -31,11 +31,11 @@ Todos se ejecutan **desde la raíz del repositorio** y funcionan igual en Window
 |---|---|
 | Diagnóstico del equipo | `dart run tool/doctor.dart` |
 | Instalar dependencias (todo el workspace) | `flutter pub get` |
-| Levantar base, API y Mailpit | `dart run tool/up.dart` |
+| Levantar base, API y Mailpit (también migra y siembra) | `dart run tool/up.dart` |
 | Detener (conserva datos) | `dart run tool/down.dart` |
 | Detener y borrar la base | `dart run tool/down.dart --borrar-datos` |
 | Ver logs de la API | `docker compose logs -f api` |
-| **Verificación completa** (formato + análisis + guardia de dinero + pruebas) | `dart run tool/check.dart` |
+| **Verificación completa** (formato + análisis + guardia de dinero + pruebas; requiere `tool/up.dart`) | `dart run tool/check.dart` |
 | Formatear | `dart run tool/check.dart --fix` |
 | Analizar (lint) | `flutter analyze` |
 | Pruebas de `core` | `cd packages/core && dart test` |
@@ -44,9 +44,10 @@ Todos se ejecutan **desde la raíz del repositorio** y funcionan igual en Window
 | App web | `cd apps/app && flutter run -d chrome --web-port 5000` |
 | App en emulador Android | `cd apps/app && flutter run` (usa `http://10.0.2.2:8080`) |
 | App en teléfono (misma Wi-Fi) | `cd apps/app && flutter run --dart-define=API_BASE_URL=http://<IP-laptop>:8080` |
-| Aplicar migraciones | `dart run tool/migrate.dart` *(desde la Fase 2)* |
-| Sembrar datos de demostración | `dart run tool/seed.dart` *(desde la Fase 2)* |
-| Reiniciar la demo | `dart run tool/reset_demo.dart` *(desde la Fase 2)* |
+| Aplicar migraciones | `dart run tool/migrate.dart` |
+| Sembrar datos de demostración | `dart run tool/seed.dart` |
+| Reiniciar la demo (borra todo; solo `DEMO_MODE=true`) | `dart run tool/reset_demo.dart` |
+| **Demostración en vivo de los 8 pasos** | `dart run tool/demo.dart --pausa` |
 
 Correos de verificación: <http://localhost:8025> (Mailpit). Nada se envía a Internet.
 
@@ -181,19 +182,20 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-10-21, Fase 1):
-- Monorepo con pub workspaces (`packages/core`, `api`, `apps/app`).
-- API mínima: `GET /health`, CORS limitado, formato de errores estándar.
-- App con marca centralizada, Material 3 claro/oscuro y verificación de conexión con la API.
-- Docker Compose con PostgreSQL 17.11, Mailpit y la API. Scripts `tool/` (up, down, doctor, check).
-- Documentación base, ADR 0001–0007, plantillas de GitHub y CI.
+**Estado actual** (2026-10-22, Fase 2 terminada):
+- Fase 1: monorepo, Docker Compose, scripts `tool/`, documentación, CI.
+- `core`: dinero en centavos (validación, formato y parseo sin `double`), Luhn, UID y firma HMAC, estados y errores.
+- Base: migración `0001` con `CHECK`, trigger de solo inserción, permisos mínimos para `monedero_app` y vista `card_reconciliation`. Migrador con checksum.
+- API completa (ver `docs/api.md`): registro y verificación por correo (Mailpit), JWT por rol, terminales con credencial, emisión/entrega, recarga y cobro idempotentes con `FOR UPDATE` y PIN sobre $25, pérdida con código, reposición atómica, conciliación y lista demo.
+- Las 5 pruebas obligatorias en verde contra PostgreSQL real; `tool/demo.dart` recorre los 8 pasos de la demo.
+- La app Flutter sigue con solo la pantalla inicial.
 
-**Siguientes pasos** (Fase 2 — base de datos y API):
-1. Migrador propio con checksums + migraciones iniciales, roles `monedero_owner`/`monedero_app`, trigger de solo inserción y vista de conciliación.
-2. `core`: Luhn, validación de montos, firma HMAC y DTOs.
-3. API: autenticación (JWT), tarjetas, recarga y débito idempotentes con `FOR UPDATE`, pérdida, reposición, terminales y conciliación.
-4. Las 5 pruebas obligatorias de diseño (ver `docs/testing.md`).
-5. `tool/migrate.dart`, `tool/seed.dart`, `tool/reset_demo.dart`.
+**Siguientes pasos** (Fase 3 — app del titular):
+1. Inicio de sesión (titular, cajero, administración) con el JWT; guardar sesión.
+2. Titular: registro con código, saldo (caché "no actualizado"), historial, tarjeta visual con QR de `credentials`.
+3. Reporte de pérdida con código, cambio de PIN.
+4. Pruebas de widgets de esos flujos.
+5. Pendiente técnico: renovación de tokens (refresh) y botón "Reiniciar demo" vía API (Fase 5).
 
 ---
 

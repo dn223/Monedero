@@ -14,6 +14,24 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-10-22 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo:**
+- Repositorio publicado en GitHub: `dn223/Monedero` (`main` = Fase 1).
+- Fase 2 completa en la rama `feat/fase-2-api`: `core` (dinero, Luhn, firma), migración inicial con barreras en la base, migrador con checksum, API completa y sembrado de demo.
+- Las 5 pruebas obligatorias pasan contra PostgreSQL real (16 pruebas de API, 15 de `core`).
+- `tool/demo.dart` recorre los 8 pasos de la demo con códigos leídos de Mailpit; conciliación en $0.00.
+
+**Pendiente:**
+- Fase 3: app del titular. Renovación de tokens (refresh). Botón "Reiniciar demo" vía API (Fase 5).
+- Completar apellidos de Leonardo, Bayron y Steven; tabla de responsables.
+
+**Problemas conocidos:**
+- `tool/check.dart` ahora necesita Docker levantado (`dart run tool/up.dart`) por las pruebas de integración.
+- Con 1,000 operaciones simultáneas sobre la misma tarjeta, las solicitudes esperan conexión del pool; el tiempo de espera es configurable (`openPool(acquireTimeout:)`).
+
+---
+
 ## 2026-10-21 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 > Nota: en paralelo, Kevin (con Claude Code, en su equipo) propuso un plan casi idéntico e instaló WSL y Docker, pero no escribió código. Este repositorio es el que tiene la Fase 1 implementada.

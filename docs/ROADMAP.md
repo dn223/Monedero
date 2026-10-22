@@ -6,9 +6,9 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 
 | Fase | Entregable | Estado |
 |---|---|---|
-| 1 | Esqueleto del monorepo, Docker Compose, scripts `tool/`, documentación base, `AGENTS.md`, CI | ✅ Terminada (pendiente de aprobación) |
-| 2 | Migraciones, roles y permisos, `core` (Luhn, montos, firma), API completa, 5 pruebas obligatorias, `migrate`/`seed`/`reset_demo` | ⏳ Siguiente |
-| 3 | App del titular: registro con código, saldo, historial, tarjeta virtual con QR, pérdida, reposición, cambio de PIN | Pendiente |
+| 1 | Esqueleto del monorepo, Docker Compose, scripts `tool/`, documentación base, `AGENTS.md`, CI | ✅ Terminada |
+| 2 | Migraciones, roles y permisos, `core` (Luhn, montos, firma), API completa, 5 pruebas obligatorias, `migrate`/`seed`/`reset_demo`, `tool/demo.dart` | ✅ Terminada (pendiente de aprobación) |
+| 3 | App del titular: registro con código, saldo, historial, tarjeta virtual con QR, pérdida, reposición, cambio de PIN | ⏳ Siguiente |
 | 4 | Caja y simulación de tarjetas: `CardReader`, QR, lista demo, número manual, cobro con PIN, recarga, comprobante | Pendiente |
 | 5 | Administración web: emitir, buscar, movimientos, conciliación, terminales, reiniciar demo | Pendiente |
 | 6 | Pulido, guion de demo ensayado, capturas, `deploy/` preparado | Pendiente |
@@ -18,7 +18,8 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | Prioridad | Pendiente | Notas |
 |---|---|---|
 | P0 | Fases 2 a 6 | Ver tabla anterior |
-| P0 | Configurar el repositorio en GitHub y proteger `main` | Requiere que el equipo cree el repositorio |
+| P0 | Proteger `main` en GitHub e invitar al equipo | Repositorio: `dn223/Monedero` |
+| P1 | Renovación de tokens (refresh) | Hoy el JWT dura 15 min |
 | P0 | Llenar la tabla de responsables en `AGENTS.md` | Equipo |
 | P1 | **Nombre definitivo** de la app | Proceso en `NAMING.md` |
 | P1 | Logotipo e íconos propios | Después del nombre |

@@ -1,15 +1,13 @@
 openapi: 3.1.0
 info:
   title: Monedero API
-  version: 0.1.0
+  version: 0.2.0
   summary: API del monedero electrónico prepago de circuito cerrado (prototipo UFG).
   description: |
     Convenciones (ver docs/api.md):
     - Dinero siempre como entero en centavos (`*Cents`).
-    - Operaciones que cambian saldo exigen `Idempotency-Key`.
+    - Recargas, cobros y reposiciones exigen `Idempotency-Key`.
     - Los errores siempre usan el esquema `ApiError`.
-
-    Fase 1: solo `GET /health`. Los endpoints de negocio se agregan en la Fase 2.
 servers:
   - url: http://localhost:8080
     description: Local (Docker Compose)
@@ -18,7 +16,14 @@ servers:
 
 tags:
   - name: Sistema
-    description: Estado de la API.
+  - name: Autenticación
+  - name: Titular
+  - name: Caja
+  - name: Administración
+  - name: Demo
+
+security:
+  - bearerAuth: []
 
 paths:
   /health:
@@ -26,73 +31,478 @@ paths:
       tags: [Sistema]
       operationId: getHealth
       summary: Estado de la API
-      description: Indica si la API está viva, su versión y si el modo demo está activo.
       security: []
       responses:
         '200':
           description: La API está operativa.
           content:
             application/json:
+              schema: {$ref: '#/components/schemas/HealthStatus'}
+              example: {status: ok, version: 0.1.0, demoMode: true}
+
+  /v1/auth/cardholders/register:
+    post:
+      tags: [Autenticación]
+      operationId: registerCardholder
+      summary: Registrar titular (envía código por correo)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, pin]
+              properties:
+                fullName: {type: string}
+                email: {type: string, format: email}
+                password: {type: string, minLength: 8}
+                pin: {type: string, pattern: '^\d{4}$'}
+            example: {fullName: Ana López, email: ana@ejemplo.com, password: ClaveSegura1, pin: '2468'}
+      responses:
+        '201':
+          description: Registrado; código enviado.
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/HealthStatus'
+                type: object
+                properties:
+                  cardholderId: {type: string, format: uuid}
+                  email: {type: string}
+        '400': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/auth/cardholders/verify-email:
+    post:
+      tags: [Autenticación]
+      operationId: verifyEmail
+      summary: Verificar correo con el código
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: {type: string}
+                code: {type: string, example: '604281'}
+      responses:
+        '200': {description: Verificado.}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+
+  /v1/auth/cardholders/login:
+    post:
+      tags: [Autenticación]
+      operationId: loginCardholder
+      summary: Inicio de sesión del titular
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Login'}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '401': {$ref: '#/components/responses/Error'}
+
+  /v1/auth/staff/login:
+    post:
+      tags: [Autenticación]
+      operationId: loginStaff
+      summary: Inicio de sesión de cajero o administrador
+      security: []
+      requestBody: {$ref: '#/components/requestBodies/Login'}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '401': {$ref: '#/components/responses/Error'}
+
+  /v1/me/cards:
+    get:
+      tags: [Titular]
+      operationId: myCards
+      summary: Mis tarjetas (con credenciales para el QR)
+      responses:
+        '200':
+          description: Tarjetas.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/Card'}}
+
+  /v1/me/cards/{id}/transactions:
+    get:
+      tags: [Titular]
+      operationId: myTransactions
+      summary: Historial de movimientos
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200': {$ref: '#/components/responses/Transactions'}
+        '404': {$ref: '#/components/responses/Error'}
+
+  /v1/me/cards/{id}/loss-reports:
+    post:
+      tags: [Titular]
+      operationId: startLossReport
+      summary: Reportar pérdida (envía código)
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '202': {description: Código enviado.}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/me/cards/{id}/loss-reports/confirm:
+    post:
+      tags: [Titular]
+      operationId: confirmLossReport
+      summary: Confirmar pérdida con el código → BLOCKED
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [code], properties: {code: {type: string}}}
+      responses:
+        '200':
+          description: Tarjeta bloqueada.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Card'}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/me/pin:
+    put:
+      tags: [Titular]
+      operationId: changePin
+      summary: Cambiar PIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPin, newPin]
+              properties:
+                currentPin: {type: string}
+                newPin: {type: string, pattern: '^\d{4}$'}
+      responses:
+        '200': {description: PIN cambiado.}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/cards/read:
+    post:
+      tags: [Caja]
+      operationId: readCard
+      summary: Validar tarjeta leída (QR, lista demo o número)
+      security: [{bearerAuth: [], terminalToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card]
+              properties:
+                card: {$ref: '#/components/schemas/CardCredentials'}
+      responses:
+        '200':
+          description: Tarjeta válida.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  numberMasked: {type: string}
+                  cardholderName: {type: string}
+                  status: {$ref: '#/components/schemas/CardStatus'}
+                  balanceCents: {type: integer, format: int64}
+                  pinRequiredAboveCents: {type: integer}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/cards/top-ups:
+    post:
+      tags: [Caja]
+      operationId: topUp
+      summary: Recargar (múltiplos de $5)
+      security: [{bearerAuth: [], terminalToken: []}]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/CardOperation'}
+      responses:
+        '201': {$ref: '#/components/responses/Receipt'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/cards/debits:
+    post:
+      tags: [Caja]
+      operationId: debit
+      summary: Cobrar (PIN si supera el límite)
+      security: [{bearerAuth: [], terminalToken: []}]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/CardOperation'}
+      responses:
+        '201': {$ref: '#/components/responses/Receipt'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+
+  /v1/admin/cardholders:
+    get:
+      tags: [Administración]
+      operationId: searchCardholders
+      summary: Buscar titulares
+      parameters: [{$ref: '#/components/parameters/Q'}]
+      responses:
+        '200': {description: Titulares encontrados.}
+
+  /v1/admin/cards:
+    get:
+      tags: [Administración]
+      operationId: searchCards
+      summary: Buscar tarjetas
+      parameters: [{$ref: '#/components/parameters/Q'}]
+      responses:
+        '200': {description: Tarjetas encontradas.}
+    post:
+      tags: [Administración]
+      operationId: issueCard
+      summary: Emitir tarjeta virtual (PENDING)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [cardholderId], properties: {cardholderId: {type: string, format: uuid}}}
+      responses:
+        '201':
+          description: Tarjeta emitida.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Card'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/admin/cards/{id}/deliver:
+    post:
+      tags: [Administración]
+      operationId: deliverCard
+      summary: Entregar tarjeta (PENDING → ACTIVE)
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200':
+          description: Tarjeta activa.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Card'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/admin/cards/{id}/replace:
+    post:
+      tags: [Administración]
+      operationId: replaceCard
+      summary: Reponer tarjeta bloqueada conservando el saldo
+      parameters:
+        - {$ref: '#/components/parameters/Id'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      responses:
+        '201':
+          description: Reposición hecha en una sola transacción.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferredCents: {type: integer, format: int64}
+                  oldCard: {$ref: '#/components/schemas/Card'}
+                  newCard: {$ref: '#/components/schemas/Card'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/admin/cards/{id}/transactions:
+    get:
+      tags: [Administración]
+      operationId: cardTransactions
+      summary: Movimientos de una tarjeta
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200': {$ref: '#/components/responses/Transactions'}
+
+  /v1/admin/reconciliation:
+    get:
+      tags: [Administración]
+      operationId: reconciliation
+      summary: Conciliación (saldo vs. suma de movimientos)
+      responses:
+        '200':
+          description: Resumen y detalle por tarjeta.
+          content:
+            application/json:
               example:
-                status: ok
-                version: 0.1.0
-                demoMode: true
-        '500':
-          $ref: '#/components/responses/InternalError'
+                cards: 4
+                cardsWithDifference: 0
+                totalBalanceCents: 8265
+                totalDifferenceCents: 0
+                items: [{cardNumberMasked: '•••• 0967', status: ACTIVE, balanceCents: 1765, ledgerCents: 1765, differenceCents: 0, transactionCount: 1}]
+
+  /v1/admin/terminals:
+    get:
+      tags: [Administración]
+      operationId: listTerminals
+      summary: Listar terminales
+      responses:
+        '200': {description: Terminales.}
+    post:
+      tags: [Administración]
+      operationId: createTerminal
+      summary: Registrar terminal (la credencial se muestra una sola vez)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [name], properties: {name: {type: string}}}
+      responses:
+        '201':
+          description: Terminal creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terminalId: {type: string, format: uuid}
+                  name: {type: string}
+                  terminalToken: {type: string}
+
+  /v1/admin/terminals/{id}:
+    delete:
+      tags: [Administración]
+      operationId: revokeTerminal
+      summary: Revocar terminal
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200': {description: Revocado.}
+
+  /v1/demo/cards:
+    get:
+      tags: [Demo]
+      operationId: demoCards
+      summary: Tarjetas activas para la caja (solo DEMO_MODE=true)
+      responses:
+        '200': {description: Tarjetas.}
+        '403': {$ref: '#/components/responses/Error'}
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT de corta duración (`JWT_TTL_MINUTES`).
-    terminalToken:
-      type: apiKey
-      in: header
-      name: X-Terminal-Token
-      description: Credencial del terminal de caja (Fase 2).
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+    terminalToken: {type: apiKey, in: header, name: X-Terminal-Token}
 
   parameters:
+    Id: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    Q: {name: q, in: query, required: false, schema: {type: string}}
     IdempotencyKey:
       name: Idempotency-Key
       in: header
       required: true
-      description: UUID v4 generado por el cliente; se reutiliza en cada reintento de la misma operación.
-      schema:
-        type: string
-        format: uuid
-      example: 3b241101-e2bb-4255-8caf-4136c566a962
+      description: UUID del cliente; se reutiliza en cada reintento de la misma operación.
+      schema: {type: string, format: uuid}
+
+  requestBodies:
+    Login:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email: {type: string}
+              password: {type: string}
+          example: {email: cajero@monedero.local, password: Cajero1234}
+    CardOperation:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [card, amountCents]
+            properties:
+              card: {$ref: '#/components/schemas/CardCredentials'}
+              amountCents: {type: integer, format: int64, minimum: 1}
+              pin: {type: string, pattern: '^\d{4}$'}
+          example:
+            card: {number: '9990142405712970', uid: 2C0C8C5A3E42A3, signature: B42149E136746651633E81491192A81D}
+            amountCents: 735
+
+  responses:
+    Error:
+      description: Error estándar.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+          example: {error: {code: INSUFFICIENT_FUNDS, message: Saldo insuficiente., details: {balanceCents: 1265, amountCents: 1500}}}
+    Session:
+      description: Sesión iniciada.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              accessToken: {type: string}
+              tokenType: {type: string, enum: [Bearer]}
+              expiresInSeconds: {type: integer}
+              role: {type: string, enum: [CARDHOLDER, CASHIER, ADMIN]}
+              userId: {type: string, format: uuid}
+              fullName: {type: string}
+    Receipt:
+      description: Comprobante (idéntico si se repite la Idempotency-Key).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Receipt'}
+    Transactions:
+      description: Movimientos, el más reciente primero.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items: {type: array, items: {$ref: '#/components/schemas/Receipt'}}
 
   schemas:
     HealthStatus:
       type: object
       required: [status, version, demoMode]
       properties:
-        status:
-          type: string
-          enum: [ok]
-        version:
-          type: string
-          example: 0.1.0
-        demoMode:
-          type: boolean
-          description: true si están activas las tarjetas de demostración y el reinicio de la demo.
-
-    ApiErrorCode:
-      type: string
-      description: Código estable del error (ver docs/api.md para la lista completa y su estado).
-      enum:
-        - VALIDATION_FAILED
-        - UNAUTHORIZED
-        - FORBIDDEN
-        - NOT_FOUND
-        - CONFLICT
-        - TOO_MANY_ATTEMPTS
-        - INTERNAL_ERROR
-
+        status: {type: string, enum: [ok]}
+        version: {type: string}
+        demoMode: {type: boolean}
+    CardStatus: {type: string, enum: [PENDING, ACTIVE, BLOCKED, REPLACED]}
+    CardCredentials:
+      type: object
+      description: Lo que entrega el lector (QR hoy, NFC mañana).
+      required: [number, uid, signature]
+      properties:
+        number: {type: string, pattern: '^\d{16}$'}
+        uid: {type: string, pattern: '^[0-9A-F]{14}$'}
+        signature: {type: string, pattern: '^[0-9A-F]{32}$'}
+    Card:
+      type: object
+      properties:
+        cardId: {type: string, format: uuid}
+        cardholderId: {type: string, format: uuid}
+        cardholderName: {type: string}
+        number: {type: string}
+        numberMasked: {type: string}
+        status: {$ref: '#/components/schemas/CardStatus'}
+        balanceCents: {type: integer, format: int64}
+        credentials: {$ref: '#/components/schemas/CardCredentials'}
+    Receipt:
+      type: object
+      properties:
+        transactionId: {type: string, format: uuid}
+        type: {type: string, enum: [TOP_UP, DEBIT, REPLACEMENT_OUT, REPLACEMENT_IN]}
+        amountCents: {type: integer, format: int64}
+        balanceAfterCents: {type: integer, format: int64}
+        cardNumberMasked: {type: string}
+        createdAt: {type: string, format: date-time}
     ApiError:
       type: object
       required: [error]
@@ -102,33 +512,7 @@ components:
           required: [code, message]
           properties:
             code:
-              $ref: '#/components/schemas/ApiErrorCode'
-            message:
               type: string
-              description: Mensaje en español para personas. La app decide por `code`.
-            details:
-              type: object
-              additionalProperties: true
-              description: Información adicional sin datos sensibles.
-
-  responses:
-    NotFound:
-      description: Ruta o recurso inexistente.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiError'
-          example:
-            error:
-              code: NOT_FOUND
-              message: 'Ruta no encontrada: GET /no-existe'
-    InternalError:
-      description: Error inesperado del servidor (sin detalles internos).
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiError'
-          example:
-            error:
-              code: INTERNAL_ERROR
-              message: Error interno del servidor.
+              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, INTERNAL_ERROR]
+            message: {type: string}
+            details: {type: object, additionalProperties: true}

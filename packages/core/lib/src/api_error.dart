@@ -24,6 +24,42 @@ enum ApiErrorCode {
   /// Se superó el límite de intentos (PIN, códigos de verificación).
   tooManyAttempts('TOO_MANY_ATTEMPTS', 429),
 
+  /// Falta el encabezado `Idempotency-Key` o no es un UUID.
+  idempotencyKeyRequired('IDEMPOTENCY_KEY_REQUIRED', 400),
+
+  /// La misma `Idempotency-Key` llegó con otro contenido.
+  idempotencyKeyReused('IDEMPOTENCY_KEY_REUSED', 422),
+
+  /// Monto inválido (≤ 0 o recarga que no es múltiplo de $5).
+  invalidAmount('INVALID_AMOUNT', 422),
+
+  /// El débito supera el saldo.
+  insufficientFunds('INSUFFICIENT_FUNDS', 422),
+
+  /// La tarjeta no está ACTIVE.
+  cardNotActive('CARD_NOT_ACTIVE', 409),
+
+  /// Número, UID o firma no coinciden.
+  invalidCardSignature('INVALID_CARD_SIGNATURE', 422),
+
+  /// Débito sobre el límite sin PIN.
+  pinRequired('PIN_REQUIRED', 422),
+
+  /// PIN incorrecto.
+  invalidPin('INVALID_PIN', 422),
+
+  /// Código de correo incorrecto o vencido.
+  invalidVerificationCode('INVALID_VERIFICATION_CODE', 422),
+
+  /// Correo o contraseña incorrectos, o correo sin verificar.
+  invalidCredentials('INVALID_CREDENTIALS', 401),
+
+  /// Terminal desconocido o revocado.
+  terminalNotAuthorized('TERMINAL_NOT_AUTHORIZED', 403),
+
+  /// Endpoint de demo con el modo demo apagado.
+  demoModeDisabled('DEMO_MODE_DISABLED', 403),
+
   /// Error inesperado del servidor. Nunca expone detalles internos.
   internal('INTERNAL_ERROR', 500);
 

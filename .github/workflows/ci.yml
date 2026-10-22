@@ -1,5 +1,6 @@
-# Análisis, formato, guardia de dinero y pruebas en cada push a main y en
-# cada pull request. Equivale a `dart run tool/check.dart` en local.
+# Análisis, formato, guardia de dinero y pruebas (unitarias e integración
+# contra PostgreSQL real) en cada push a main y en cada pull request.
+# Equivale a `dart run tool/check.dart` en local.
 name: CI
 
 on:
@@ -18,7 +19,24 @@ jobs:
   check:
     name: check
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      db:
+        image: postgres:17.11
+        env:
+          POSTGRES_DB: monedero
+          POSTGRES_USER: monedero_owner
+          POSTGRES_PASSWORD: ci_owner_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U monedero_owner"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      POSTGRES_OWNER_USER: monedero_owner
+      POSTGRES_OWNER_PASSWORD: ci_owner_password
+      POSTGRES_APP_USER: monedero_app
+      POSTGRES_APP_PASSWORD: ci_app_password
+      POSTGRES_PORT: "5432"
     steps:
       - uses: actions/checkout@v7
 

@@ -9,10 +9,16 @@ environment:
 resolution: workspace
 
 dependencies:
+  bcrypt: ^1.2.0
+  crypto: ^3.0.7
+  dart_jsonwebtoken: ^3.4.1
+  mailer: ^7.2.0
   monedero_core: any
+  postgres: ^3.5.20
   shelf: ^1.4.3
   shelf_router: ^1.1.5
 
 dev_dependencies:
   lints: ^6.1.0
   test: ^1.31.1
+  uuid: ^4.6.0

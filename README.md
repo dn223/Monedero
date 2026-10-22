@@ -40,13 +40,27 @@ flutter run -d chrome --web-port 5000
 
 En Android: emulador con `flutter run`; teléfono, ver [setup.md § 5](docs/setup.md#5-conectar-android-a-la-api-local).
 
+**Demostración de los 8 pasos contra la API real** (registrar, emitir, recargar $20, cobrar $7.35, sobregiro, pérdida, reposición y conciliación):
+
+```bash
+dart run tool/demo.dart --pausa
+```
+
 ## Credenciales de demostración
 
-Se crean con los datos de demostración en la **Fase 2** (`dart run tool/seed.dart`). Se listarán aquí y en [docs/demo.md](docs/demo.md).
+Las crea `dart run tool/up.dart` (o `dart run tool/seed.dart`).
+
+| Rol | Usuario | Contraseña | PIN |
+|---|---|---|---|
+| Administrador | `admin@monedero.local` | `Admin1234` | — |
+| Cajero | `cajero@monedero.local` | `Cajero1234` | — |
+| Titular | `ana@demo.local` / `bruno@demo.local` | `Titular1234` | `1234` |
+
+Solo para la demo local; nunca se usan en producción.
 
 ## Estado
 
-**Fase 1 de 6** — esqueleto, entorno y documentación. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+**Fase 2 de 6** — base de datos y API completas, con las 5 pruebas obligatorias en verde. La app tiene por ahora solo la pantalla inicial (fases 3 a 5). Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Documentación
 

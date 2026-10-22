@@ -2,7 +2,7 @@
 
 PostgreSQL **17** (`postgres:17.11` en Docker). Es la **única fuente de verdad del saldo**.
 
-> Estado: **diseño**. Las migraciones se implementan en la Fase 2; este documento se actualizará con el esquema real.
+> Estado: **implementado** en `db/migrations/0001_initial_schema.sql` (Fase 2). Las pruebas de `api/test/integration/` verifican estas barreras contra PostgreSQL real.
 
 ## 1. Modelo entidad-relación (diseño)
 
@@ -80,11 +80,11 @@ erDiagram
   }
 ```
 
-Tablas auxiliares previstas: `verification_codes` (códigos por correo con vencimiento e intentos) e `idempotency_records` si la respuesta original necesita guardarse aparte de `transactions`.
+Tabla auxiliar: `verification_codes` (hash SHA-256 del código, propósito `VERIFY_EMAIL` o `REPORT_LOSS`, vencimiento de 10 minutos e intentos). La idempotencia vive en `transactions.idempotency_key` y `replacements.idempotency_key`, ambas `UNIQUE`; la reposición usa claves derivadas `<clave>:out` y `<clave>:in` para sus dos movimientos.
 
 ## 2. Barreras en la base
 
-| Barrera | Implementación prevista |
+| Barrera | Implementación |
 |---|---|
 | Saldo nunca negativo | `CHECK (balance_cents >= 0)` en `cards` |
 | Montos positivos | `CHECK (amount_cents > 0)` en `transactions` |
@@ -98,18 +98,18 @@ Tablas auxiliares previstas: `verification_codes` (códigos por correo con venci
 | Rol de PostgreSQL | Uso | Permisos |
 |---|---|---|
 | `monedero_owner` | Dueño del esquema; solo migraciones | Todo sobre el esquema `monedero` |
-| `monedero_app` | Conexión de la API | `SELECT, INSERT` en `transactions`; `SELECT, INSERT, UPDATE` en el resto; **nunca** `UPDATE`/`DELETE` en `transactions`, ni DDL |
+| `monedero_app` | Conexión de la API (lo crea `tool/migrate.dart` con `POSTGRES_APP_PASSWORD`) | `SELECT, INSERT` en `transactions` y `replacements`; `SELECT, INSERT, UPDATE` en `cardholders`, `staff_users`, `terminals`, `cards`, `verification_codes`; `SELECT` en la vista; **nunca** `UPDATE`/`DELETE` en `transactions`, ni DDL |
 
 La API **nunca** se conecta con `monedero_owner`. Ambas contraseñas están en `.env` (`POSTGRES_OWNER_PASSWORD`, `POSTGRES_APP_PASSWORD`).
 
 ## 4. Migraciones
 
 - Ubicación: `db/migrations/NNNN_descripcion.sql` (4 dígitos, por ejemplo `0001_initial_schema.sql`).
-- Se aplican en orden con `dart run tool/migrate.dart` (Fase 2), que registra cada una en `schema_migrations` con su **checksum**.
+- Se aplican en orden con `dart run tool/migrate.dart` (también lo hace `tool/up.dart`), que registra cada una en `schema_migrations` con su **checksum**.
 - **Una migración aplicada nunca se edita.** Si el checksum cambia, el migrador se detiene. Para corregir, se crea una migración nueva.
 - Cada migración que crea una tabla también otorga los permisos mínimos a `monedero_app`.
 - Sin tipos decimales ni flotantes para dinero: `tool/check.dart` rechaza `NUMERIC`, `REAL`, `FLOAT`, `DOUBLE PRECISION`, `MONEY` y `DECIMAL` en las migraciones.
 
 ## 5. Datos de demostración
 
-`db/seed/` contendrá titulares, personal, terminales y tarjetas de demostración (Fase 2). `dart run tool/reset_demo.dart` vacía y vuelve a sembrar la base, y solo funciona con `DEMO_MODE=true`.
+Los datos se siembran en Dart (`api/lib/src/seed.dart`) porque necesitan hashes bcrypt y firmas HMAC con la llave del servidor: un administrador, un cajero y dos titulares con tarjeta `ACTIVE` y saldo inicial registrado como recarga (la conciliación cuadra desde el inicio). `dart run tool/reset_demo.dart` vacía, migra y vuelve a sembrar, y solo funciona con `DEMO_MODE=true`.

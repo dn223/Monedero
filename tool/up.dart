@@ -29,6 +29,10 @@ Future<void> main(List<String> args) async {
     );
   }
 
+  heading('Migraciones y datos de demostración');
+  final migrated = await run('dart', ['run', 'api/bin/migrate.dart', '--seed']);
+  if (migrated != 0) exitWith(migrated, 'Las migraciones fallaron.');
+
   heading('Esperando la API');
   final healthUrl = Uri.parse('http://localhost:$apiPort/health');
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);

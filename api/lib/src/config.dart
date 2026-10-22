@@ -9,6 +9,18 @@ class ApiConfig {
     this.port = 8080,
     this.allowedOrigins = const [],
     this.demoMode = false,
+    this.database = const DatabaseConfig(),
+    this.jwtSecret = '',
+    this.jwtTtl = const Duration(minutes: 15),
+    this.cardMasterKey = '',
+    this.cardNumberPrefix = '9990',
+    this.pinRequiredAboveCents = 2500,
+    this.maxPinAttempts = 3,
+    this.maxVerificationCodeAttempts = 5,
+    this.smtpHost = 'localhost',
+    this.smtpPort = 1025,
+    this.mailFrom = 'no-responder@monedero.local',
+    this.passwordHashRounds = 10,
   });
 
   /// Construye la configuración desde un mapa de entorno, normalmente
@@ -16,15 +28,31 @@ class ApiConfig {
   ///
   /// Lanza [StateError] si un valor tiene un formato inválido.
   factory ApiConfig.fromEnvironment(Map<String, String> env) {
-    final portText = env['API_PORT'] ?? '8080';
-    final port = int.tryParse(portText);
-    if (port == null || port <= 0 || port > 65535) {
-      throw StateError('API_PORT inválido: "$portText".');
-    }
     return ApiConfig(
-      port: port,
+      port: _int(env, 'API_PORT', 8080),
       allowedOrigins: _parseList(env['CORS_ALLOWED_ORIGINS']),
       demoMode: _parseBool(env['DEMO_MODE'], name: 'DEMO_MODE'),
+      database: DatabaseConfig(
+        host: env['DATABASE_HOST'] ?? 'localhost',
+        port: _int(env, 'DATABASE_PORT', _int(env, 'POSTGRES_PORT', 5432)),
+        name: env['POSTGRES_DB'] ?? 'monedero',
+        user: env['POSTGRES_APP_USER'] ?? 'monedero_app',
+        password: env['POSTGRES_APP_PASSWORD'] ?? '',
+      ),
+      jwtSecret: env['JWT_SECRET'] ?? '',
+      jwtTtl: Duration(minutes: _int(env, 'JWT_TTL_MINUTES', 15)),
+      cardMasterKey: env['CARD_MASTER_KEY'] ?? '',
+      cardNumberPrefix: env['CARD_NUMBER_PREFIX'] ?? '9990',
+      pinRequiredAboveCents: _int(env, 'PIN_REQUIRED_ABOVE_CENTS', 2500),
+      maxPinAttempts: _int(env, 'MAX_PIN_ATTEMPTS', 3),
+      maxVerificationCodeAttempts: _int(
+        env,
+        'MAX_VERIFICATION_CODE_ATTEMPTS',
+        5,
+      ),
+      smtpHost: env['SMTP_HOST'] ?? 'localhost',
+      smtpPort: _int(env, 'SMTP_PORT', _int(env, 'MAILPIT_SMTP_PORT', 1025)),
+      mailFrom: env['MAIL_FROM'] ?? 'no-responder@monedero.local',
     );
   }
 
@@ -39,6 +67,70 @@ class ApiConfig {
   /// Activa la lista de tarjetas de demostración y el reinicio de la demo.
   /// Desactivado por defecto; nunca debe activarse en producción.
   final bool demoMode;
+
+  /// Conexión a PostgreSQL con el usuario de permisos mínimos.
+  final DatabaseConfig database;
+
+  /// Secreto HS256 de los JWT.
+  final String jwtSecret;
+
+  /// Duración de los tokens de acceso.
+  final Duration jwtTtl;
+
+  /// Llave maestra para firmar tarjetas (solo en el servidor).
+  final String cardMasterKey;
+
+  /// Prefijo de los números de tarjeta.
+  final String cardNumberPrefix;
+
+  /// Débitos mayores a este monto exigen PIN.
+  final int pinRequiredAboveCents;
+
+  /// Intentos de PIN fallidos antes de bloquear 15 minutos.
+  final int maxPinAttempts;
+
+  /// Intentos por código de verificación.
+  final int maxVerificationCodeAttempts;
+
+  /// Servidor SMTP (Mailpit en local).
+  final String smtpHost;
+
+  /// Puerto SMTP.
+  final int smtpPort;
+
+  /// Remitente de los correos.
+  final String mailFrom;
+
+  /// Costo de bcrypt (las pruebas usan uno menor para ir rápido).
+  final int passwordHashRounds;
+
+  /// Lanza [StateError] si faltan los secretos necesarios para operar.
+  void requireSecrets() {
+    if (jwtSecret.length < 32) {
+      throw StateError('JWT_SECRET falta o tiene menos de 32 caracteres.');
+    }
+    if (cardMasterKey.length < 32) {
+      throw StateError('CARD_MASTER_KEY falta o tiene menos de 32 caracteres.');
+    }
+    if (database.password.isEmpty) {
+      throw StateError('Falta POSTGRES_APP_PASSWORD.');
+    }
+  }
+
+  static int _int(Map<String, String> env, String name, int fallback) {
+    final text = env[name];
+    if (text == null || text.trim().isEmpty) return fallback;
+    final value = int.tryParse(text.trim());
+    if (value == null ||
+        value < 0 ||
+        (name.endsWith('PORT') && value > 65535)) {
+      throw StateError('$name inválido: "$text".');
+    }
+    if (name.endsWith('PORT') && value == 0) {
+      throw StateError('$name inválido: "$text".');
+    }
+    return value;
+  }
 
   static List<String> _parseList(String? value) => (value ?? '')
       .split(',')
@@ -56,4 +148,41 @@ class ApiConfig {
         throw StateError('$name debe ser true o false, no "$value".');
     }
   }
+}
+
+/// Datos de conexión a PostgreSQL.
+class DatabaseConfig {
+  /// Crea la configuración de conexión.
+  const DatabaseConfig({
+    this.host = 'localhost',
+    this.port = 5432,
+    this.name = 'monedero',
+    this.user = 'monedero_app',
+    this.password = '',
+  });
+
+  /// Host del servidor.
+  final String host;
+
+  /// Puerto del servidor.
+  final int port;
+
+  /// Nombre de la base.
+  final String name;
+
+  /// Usuario (en la API, `monedero_app`).
+  final String user;
+
+  /// Contraseña.
+  final String password;
+
+  /// Copia con otros valores.
+  DatabaseConfig copyWith({String? name, String? user, String? password}) =>
+      DatabaseConfig(
+        host: host,
+        port: port,
+        name: name ?? this.name,
+        user: user ?? this.user,
+        password: password ?? this.password,
+      );
 }

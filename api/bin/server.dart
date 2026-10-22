@@ -7,10 +7,21 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 /// Arranca la API escuchando en todas las interfaces IPv4, para que el
 /// emulador (10.0.2.2) y los teléfonos de la misma Wi-Fi puedan conectarse.
 Future<void> main() async {
-  final config = ApiConfig.fromEnvironment(Platform.environment);
+  final config = ApiConfig.fromEnvironment(Platform.environment)
+    ..requireSecrets();
+  final pool = openPool(config.database);
+  final services = Services(
+    config,
+    pool,
+    SmtpMailer(
+      host: config.smtpHost,
+      port: config.smtpPort,
+      from: config.mailFrom,
+    ),
+  );
   final handler = const Pipeline()
       .addMiddleware(logRequests())
-      .addHandler(buildApiHandler(config));
+      .addHandler(buildApiHandler(config, services: services));
 
   final server = await shelf_io.serve(
     handler,
@@ -30,5 +41,6 @@ Future<void> main() async {
   await Future.any(signals.map((signal) => signal.first));
   stdout.writeln('Deteniendo la API...');
   await server.close();
+  await pool.close();
   exit(0);
 }

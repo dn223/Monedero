@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:monedero_core/monedero_core.dart';
 import 'package:shelf/shelf.dart';
 
+import '../errors.dart';
 import 'json.dart';
 
 /// Encabezados que el navegador puede enviar a la API.
@@ -52,6 +53,8 @@ Middleware handleErrors() =>
         return await inner(request);
       } on HijackException {
         rethrow;
+      } on ApiException catch (error) {
+        return errorResponse(error.error);
       } on Object catch (error, stackTrace) {
         stderr.writeln('ERROR ${request.method} ${request.requestedUri.path}');
         stderr.writeln('$error\n$stackTrace');

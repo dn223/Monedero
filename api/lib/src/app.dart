@@ -5,15 +5,18 @@ import 'package:shelf_router/shelf_router.dart';
 import 'config.dart';
 import 'http/json.dart';
 import 'http/middleware.dart';
+import 'routes.dart';
+import 'services/services.dart';
 import 'version.dart';
 
 /// Construye el manejador HTTP completo de la API a partir de [config].
 ///
-/// Orden de middlewares: errores → CORS → rutas. Las pruebas usan este
-/// manejador directamente, sin abrir un puerto.
-Handler buildApiHandler(ApiConfig config) {
+/// Sin [services] solo expone `/health` (pruebas sin base de datos).
+/// Orden de middlewares: errores → CORS → rutas.
+Handler buildApiHandler(ApiConfig config, {Services? services}) {
   final router = Router(notFoundHandler: _notFound)
     ..get('/health', (Request request) => _health(config));
+  if (services != null) addBusinessRoutes(router, config, services);
 
   return const Pipeline()
       .addMiddleware(handleErrors())

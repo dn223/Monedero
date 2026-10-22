@@ -11,4 +11,5 @@ Un ADR por decisión técnica, con el formato de [0000-plantilla.md](0000-planti
 | [0005](0005-sqlite-no-es-fuente-del-saldo.md) | SQLite (u otra base local) no es fuente del saldo | Aceptado |
 | [0006](0006-riverpod-y-go-router-sin-codegen.md) | Riverpod y go_router sin generación de código | Aceptado |
 | [0007](0007-monorepo-con-pub-workspaces.md) | Monorepo con pub workspaces | Aceptado |
-| 0008 | Nombre definitivo de la app (ver `NAMING.md`) | Pendiente |
+| [0008](0008-idempotencia-y-migraciones.md) | Semántica de idempotencia, migrador con checksum y sembrado en Dart | Aceptado |
+| 0009 | Nombre definitivo de la app (ver `NAMING.md`) | Pendiente |

@@ -7,4 +7,8 @@
 library;
 
 export 'src/api_error.dart';
+export 'src/card_number.dart';
+export 'src/card_signature.dart';
+export 'src/enums.dart';
 export 'src/health.dart';
+export 'src/money.dart';

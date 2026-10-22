@@ -49,7 +49,7 @@ Verificaciones sugeridas: búsqueda web, Google Play, registro de marcas del CNR
 2. **Revisión:** cada propuesta se revisa contra los criterios de la sección 2; las que no los cumplen se descartan con una breve explicación.
 3. **Discusión:** en una reunión o en un issue de votación, se comentan las finalistas.
 4. **Votación:** cada integrante ordena sus 3 favoritas (3 puntos la primera, 2 la segunda, 1 la tercera). Gana la de más puntos; si hay empate, se vota de nuevo solo entre las empatadas.
-5. **Registro:** la decisión se documenta como **ADR 0008** en `docs/adr/` (contexto, nombre elegido, alternativas descartadas y por qué).
+5. **Registro:** la decisión se documenta como **ADR 0009** en `docs/adr/` (contexto, nombre elegido, alternativas descartadas y por qué).
 
 ## 5. Lista de verificación para aplicar el nombre elegido
 
@@ -61,6 +61,6 @@ Verificaciones sugeridas: búsqueda web, Google Play, registro de marcas del CNR
 - [ ] Documentación en `docs/` que mencione el nombre visible (no los identificadores).
 - [ ] `AGENTS.md`, sección 1.
 - [ ] `MAIL_FROM` en `.env.example` y en `deploy/.env.prod.example`.
-- [ ] ADR 0008 creado y enlazado en `docs/adr/README.md`.
+- [ ] ADR 0009 creado y enlazado en `docs/adr/README.md`.
 - [ ] Entrada en `CHANGELOG.md` y en `docs/BITACORA.md`.
 - [ ] **No** se tocaron `applicationId`, `namespace`, nombres de paquetes Dart ni nombres de base de datos.

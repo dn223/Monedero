@@ -42,6 +42,12 @@ Verificadas el **2026-10-21** en pub.dev, Docker Hub y GitHub. Si instalas versi
 | `http` | 1.6.0 | app |
 | `cupertino_icons` | 2.0.0 | app (lo exige la compilación web) |
 | `meta` | 1.19.0 | core |
+| `crypto` | 3.0.7 | core, api (HMAC-SHA256, SHA-256) |
+| `postgres` | 3.5.20 | api |
+| `bcrypt` | 1.2.0 | api (contraseñas y PIN) |
+| `dart_jsonwebtoken` | 3.4.1 | api (JWT HS256) |
+| `mailer` | 7.2.0 | api (SMTP hacia Mailpit) |
+| `uuid` | 4.6.0 | api (solo pruebas) |
 | `lints` | 6.1.0 | raíz, api, core |
 | `flutter_lints` | 6.0.0 | app |
 | `test` | 1.31.1 | api, core — **no 1.33.0**: Flutter 3.47.7 fija `test_api` 0.7.12 y en un workspace todos comparten esa versión |
