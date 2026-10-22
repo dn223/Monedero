@@ -66,12 +66,6 @@ class HomePage extends ConsumerWidget {
                     label: 'Administración',
                     route: '/admin',
                   ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Prototipo académico · ${Brand.organization}',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
-                  ),
                 ],
               ),
             ),
