@@ -1,0 +1,45 @@
+# Análisis, formato, guardia de dinero y pruebas en cada push a main y en
+# cada pull request. Equivale a `dart run tool/check.dart` en local.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Formato, análisis, guardia de dinero y pruebas
+        run: dart run tool/check.dart
+
+  api-image:
+    name: api-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Construir la imagen de la API
+        run: docker build -f api/Dockerfile -t monedero-api:ci .

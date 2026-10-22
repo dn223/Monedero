@@ -1,0 +1,52 @@
+# --- Secretos (NUNCA subir) --------------------------------------------------
+.env
+.env.*
+!.env.example
+!deploy/.env.prod.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+key.properties
+
+# --- Dart / Flutter -----------------------------------------------------------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/doc/api/
+*.g.dart.incremental
+
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/.kotlin/
+
+# --- IDE y sistema --------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.history/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.log
+
+# --- Respaldos y volcados locales ---------------------------------------------
+*.dump
+*.sql.gz
+backups/

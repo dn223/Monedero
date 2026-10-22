@@ -1,0 +1,58 @@
+name: Propuesta de nombre
+description: Propón un nombre para la app (máximo 3 por integrante). Ver NAMING.md.
+title: "[Nombre] "
+labels: ["nombre"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Revisa los criterios de [NAMING.md](../blob/main/NAMING.md) antes de proponer.
+        Cada integrante puede proponer **hasta 3 nombres** (un issue por nombre).
+  - type: input
+    id: nombre
+    attributes:
+      label: Nombre propuesto
+      placeholder: Ej. Saldito
+    validations:
+      required: true
+  - type: dropdown
+    id: autor
+    attributes:
+      label: Propuesto por
+      options:
+        - Kevin Alexander González Calderón
+        - Cesar Rodrigo Cerón Cruz
+        - David Alexis Navarrete Gálvez
+        - Leonardo
+        - Bayron
+        - Steven
+    validations:
+      required: true
+  - type: textarea
+    id: significado
+    attributes:
+      label: Significado
+      description: Qué transmite el nombre y por qué encaja con un monedero prepago.
+    validations:
+      required: true
+  - type: textarea
+    id: pros-contras
+    attributes:
+      label: Pros y contras
+    validations:
+      required: true
+  - type: checkboxes
+    id: criterios
+    attributes:
+      label: Criterios verificados
+      options:
+        - label: Corto (2–3 sílabas, máximo 12 letras)
+        - label: Fácil de pronunciar y escribir en español
+        - label: Sin marcas registradas conocidas (búsqueda web y CNR)
+        - label: No se confunde con billeteras o bancos de El Salvador
+        - label: Dominio disponible (.com, .sv o .app)
+  - type: input
+    id: dominio
+    attributes:
+      label: Dominio verificado
+      placeholder: Ej. saldito.app (disponible)

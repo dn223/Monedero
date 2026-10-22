@@ -1,0 +1,18 @@
+name: monedero_core
+description: >-
+  Modelos, validaciones (Luhn, montos, firma de tarjeta) y DTOs compartidos
+  entre la API y la app de Monedero. Dart puro: sin Flutter ni dart:io.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+dependencies:
+  meta: ^1.19.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.31.1

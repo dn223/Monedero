@@ -1,0 +1,134 @@
+openapi: 3.1.0
+info:
+  title: Monedero API
+  version: 0.1.0
+  summary: API del monedero electrónico prepago de circuito cerrado (prototipo UFG).
+  description: |
+    Convenciones (ver docs/api.md):
+    - Dinero siempre como entero en centavos (`*Cents`).
+    - Operaciones que cambian saldo exigen `Idempotency-Key`.
+    - Los errores siempre usan el esquema `ApiError`.
+
+    Fase 1: solo `GET /health`. Los endpoints de negocio se agregan en la Fase 2.
+servers:
+  - url: http://localhost:8080
+    description: Local (Docker Compose)
+  - url: http://10.0.2.2:8080
+    description: Local desde el emulador Android
+
+tags:
+  - name: Sistema
+    description: Estado de la API.
+
+paths:
+  /health:
+    get:
+      tags: [Sistema]
+      operationId: getHealth
+      summary: Estado de la API
+      description: Indica si la API está viva, su versión y si el modo demo está activo.
+      security: []
+      responses:
+        '200':
+          description: La API está operativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+                version: 0.1.0
+                demoMode: true
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT de corta duración (`JWT_TTL_MINUTES`).
+    terminalToken:
+      type: apiKey
+      in: header
+      name: X-Terminal-Token
+      description: Credencial del terminal de caja (Fase 2).
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID v4 generado por el cliente; se reutiliza en cada reintento de la misma operación.
+      schema:
+        type: string
+        format: uuid
+      example: 3b241101-e2bb-4255-8caf-4136c566a962
+
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, version, demoMode]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+          example: 0.1.0
+        demoMode:
+          type: boolean
+          description: true si están activas las tarjetas de demostración y el reinicio de la demo.
+
+    ApiErrorCode:
+      type: string
+      description: Código estable del error (ver docs/api.md para la lista completa y su estado).
+      enum:
+        - VALIDATION_FAILED
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - NOT_FOUND
+        - CONFLICT
+        - TOO_MANY_ATTEMPTS
+        - INTERNAL_ERROR
+
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              $ref: '#/components/schemas/ApiErrorCode'
+            message:
+              type: string
+              description: Mensaje en español para personas. La app decide por `code`.
+            details:
+              type: object
+              additionalProperties: true
+              description: Información adicional sin datos sensibles.
+
+  responses:
+    NotFound:
+      description: Ruta o recurso inexistente.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: NOT_FOUND
+              message: 'Ruta no encontrada: GET /no-existe'
+    InternalError:
+      description: Error inesperado del servidor (sin detalles internos).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Error interno del servidor.

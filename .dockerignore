@@ -1,0 +1,12 @@
+**/.dart_tool/
+**/build/
+**/.env
+.env*
+!.env.example
+.git/
+.github/
+apps/
+docs/
+deploy/
+tool/
+**/*.md

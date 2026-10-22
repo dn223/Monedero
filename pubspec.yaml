@@ -1,0 +1,18 @@
+# Raíz del monorepo (pub workspace). Resuelve las dependencias de todos los
+# paquetes con un solo `pubspec.lock`. Ejecuta `flutter pub get` desde aquí.
+#
+# Este paquete raíz también contiene los scripts multiplataforma de `tool/`.
+name: monedero_workspace
+description: Raíz del monorepo de Monedero y scripts de tareas comunes.
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/core
+  - api
+  - apps/app
+
+dev_dependencies:
+  lints: ^6.1.0
