@@ -1,46 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
+    `flutter build` reemplaza $FLUTTER_BASE_HREF por el valor de --base-href
+    (por defecto "/"). La API sirve este build en la raíz (ver ADR 0010).
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Monedero electrónico prepago (prototipo UFG).">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Monedero: tarjeta prepago recargable de circuito cerrado (prototipo académico UFG).">
+  <meta name="theme-color" content="#0B6E4F">
 
-  <!-- iOS meta tags & icons -->
+  <!-- Instalación como app (Android, iOS y escritorio) -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Monedero">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
 
   <title>Monedero</title>
-  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Pantalla de carga mientras se descarga la app (por el túnel puede
+       tardar unos segundos). Se quita con el primer cuadro de Flutter. */
+    html, body { margin: 0; height: 100%; }
+    body { background: #F5FBF5; }
+    @media (prefers-color-scheme: dark) { body { background: #0F1511; } }
+    #splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      font-family: Roboto, system-ui, sans-serif; color: #0B6E4F;
+    }
+    #splash .card {
+      width: 96px; height: 60px; border-radius: 12px;
+      background: linear-gradient(135deg, #0B6E4F, #063D2C);
+      box-shadow: 0 8px 20px rgba(6, 61, 44, .35);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    #splash p { margin: 0; font-size: 15px; letter-spacing: .2px; }
+    @media (prefers-color-scheme: dark) { #splash { color: #8BD6B4; } }
+    @keyframes pulse { 50% { transform: translateY(-4px); opacity: .85; } }
+    @media (prefers-reduced-motion: reduce) { #splash .card { animation: none; } }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="splash" role="status">
+    <div class="card"></div>
+    <p>Cargando Monedero…</p>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (splash) splash.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
