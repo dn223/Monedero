@@ -5,7 +5,7 @@ import 'package:shelf_static/shelf_static.dart';
 
 /// Sirve el build web de Flutter (`flutter build web`) desde [webDir], en el
 /// mismo origen que la API: así un solo link (por ejemplo el del túnel de
-/// Cloudflare) abre la app y habla con la API sin CORS (ver docs/adr/0010).
+/// Cloudflare) abre la app y habla con la API sin CORS (ver docs/adr/0011).
 ///
 /// La carpeta se revisa en cada solicitud, porque el build puede generarse
 /// después de arrancar la API. Si no existe, devuelve `null` y la API

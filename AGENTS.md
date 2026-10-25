@@ -19,7 +19,7 @@
 9. Cada operación que cambia saldo es **atómica, idempotente y auditable**; la base de datos es la última barrera.
 10. El equipo trabaja con varias IA: el protocolo de traspaso (sección 8) es obligatorio.
 
-Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
+Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [exposición por link](docs/exposicion.md) · [Android](docs/android.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
 
 ---
 
@@ -48,6 +48,10 @@ Todos se ejecutan **desde la raíz del repositorio** y funcionan igual en Window
 | Sembrar datos de demostración | `dart run tool/seed.dart` |
 | Reiniciar la demo (borra todo; solo `DEMO_MODE=true`) | `dart run tool/reset_demo.dart` |
 | **Demostración en vivo de los 8 pasos** | `dart run tool/demo.dart --pausa` |
+| App web servida por la API (<http://localhost:8080>) | `cd apps/app && flutter build web` |
+| **Link público para la exposición** (web + túnel, imprime el link) | `dart run tool/share.dart` |
+| APK release firmado | `cd apps/app && flutter build apk --release` |
+| Regenerar íconos desde `brand.dart` | `cd apps/app && flutter test tool/icons/generate_icons_test.dart --update-goldens` |
 
 Correos de verificación: <http://localhost:8025> (Mailpit). Nada se envía a Internet.
 
@@ -182,20 +186,18 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-10-22, Fase 2 terminada):
-- Fase 1: monorepo, Docker Compose, scripts `tool/`, documentación, CI.
-- `core`: dinero en centavos (validación, formato y parseo sin `double`), Luhn, UID y firma HMAC, estados y errores.
-- Base: migración `0001` con `CHECK`, trigger de solo inserción, permisos mínimos para `monedero_app` y vista `card_reconciliation`. Migrador con checksum.
-- API completa (ver `docs/api.md`): registro y verificación por correo (Mailpit), JWT por rol, terminales con credencial, emisión/entrega, recarga y cobro idempotentes con `FOR UPDATE` y PIN sobre $25, pérdida con código, reposición atómica, conciliación y lista demo.
-- Las 5 pruebas obligatorias en verde contra PostgreSQL real; `tool/demo.dart` recorre los 8 pasos de la demo.
-- Fase 3 (fases reordenadas el 2026-10-22): vistas de diseño de titular (`/titular`), caja (`/caja`) y administración (`/admin`) en `apps/app/lib/features/preview/`, con datos de ejemplo y sin conectar a la API.
+**Estado actual** (2026-10-25, fases 1 a 6 terminadas en la rama `feat/fase-4-6-demo`, pendiente de revisión y fusión):
+- Fases 1–2: monorepo, Docker Compose, `tool/`, CI; `core` (centavos, Luhn, firma HMAC); base con barreras (`0001`, `0002`); API completa con las 5 pruebas obligatorias.
+- Fase 4: la app habla con la API en los tres roles. Sesión por rol (`core/session/`), titular (`features/holder/`), caja (`features/cashier/` + `lib/card_reader/`), inicio de sesión común (`features/auth/`) con cuentas demo en modo demo. Las vistas de diseño de la Fase 3 se eliminaron.
+- Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
+- Fase 6: APK release firmado con keystore en `~/.monedero/` (ADR 0013), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `tool/share.dart` abre un quick tunnel de Cloudflare (ADR 0011, `docs/exposicion.md`).
+- Pruebas: 22 de `core`, 31 de la API y 6 de widgets, todas en verde con `tool/check.dart`.
 
-**Siguientes pasos** (Fase 4 — conectar titular y caja):
-1. Inicio de sesión con el JWT y sesión guardada; reemplazar `SampleData` por datos de la API.
-2. Titular: saldo (caché "no actualizado"), historial, QR real de `credentials`, pérdida con código y cambio de PIN.
-3. Caja: `CardReader` + `SimulatedCardReader` (QR con cámara, lista demo, número), cobro con PIN, recarga y comprobante.
-4. Pruebas de widgets de esos flujos.
-5. Pendiente técnico: renovación de tokens (refresh) y botón "Reiniciar demo" vía API (Fase 5).
+**Siguientes pasos** (siguiente entrega: Fase 7 — NFC):
+1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`.
+2. Probar el APK en los celulares del equipo y respaldar `~/.monedero/`.
+3. Probar MIFARE Classic en los teléfonos (`docs/nfc.md` § 5) e implementar `NfcMifareCardReader`.
+4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.
 
 ---
 

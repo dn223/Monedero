@@ -16,15 +16,23 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ## 2026-10-25 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
-**Qué se hizo:**
-- Fases 4 y 5 en la rama `feat/fase-4-6-demo`: la app quedó conectada a la API en los tres roles (inicio de sesión real con sesión guardada por rol; titular con registro, saldo, QR, pago con código, PIN, pérdida y buzón demo; caja con vínculo de terminal, lectura simulada por QR/lista/número, cobro con PIN, recarga y comprobante; administración con tablero, tarjetas, titulares, cajas y reinicio de la demo).
+**Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):
+- Fases 4 y 5: la app quedó conectada a la API en los tres roles (inicio de sesión real con sesión guardada por rol; titular con registro, saldo, QR, pago con código, PIN, pérdida y buzón demo; caja con vínculo de terminal, lectura simulada por QR/lista/número, cobro con PIN, recarga y comprobante tipo ticket; administración con tablero y gráfico, tarjetas, titulares, cajas y reinicio de la demo).
 - API: renovación de sesión con tokens rotativos (migración `0003`), límite de solicitudes por minuto, códigos de correo visibles en modo demo, buzón demo, cajas demo por dispositivo, tablero de indicadores y reinicio de la demo por API.
+- Fase 6: APK release firmado (keystore en `C:\Users\alexi\.monedero\`, fuera de git), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `dart run tool/share.dart` abre un quick tunnel de Cloudflare en Docker.
+- Interfaz pulida con los skills `frontend-design` y `dataviz` (paleta del gráfico validada para daltonismo). Probada en el navegador a ancho de escritorio y de celular, en claro y oscuro, y por el link público.
+- Documentación: README con capturas, `docs/exposicion.md`, `docs/android.md`, demo desde la app, API/OpenAPI, base de datos, arquitectura, setup (versiones), pruebas, dominio, roadmap con plan de entregas, ADR 0010–0013. Se reparó la doble codificación de `CHANGELOG.md`.
 
 **Pendiente:**
-- (Se completa al cerrar la sesión.)
+- Revisión del equipo y fusión a `main`; ensayo de la exposición.
+- Probar el APK en celulares reales (solo se compiló y se verificó la firma) y respaldar el keystore.
+- Fase 7 (NFC) en la siguiente entrega; Fase 8 (Contabo) solo con aprobación del equipo.
 
 **Problemas conocidos:**
-- (Se completa al cerrar la sesión.)
+- El nombre del quick tunnel puede tardar uno o dos minutos en responder; `tool/share.dart` lo avisa.
+- Los quick tunnels de Cloudflare no garantizan disponibilidad; plan B en `docs/exposicion.md` (red local).
+- En la web los tokens viven en `localStorage` (aceptable para el prototipo; ver ADR 0010).
+- El APK universal pesa ≈70 MB; `--split-per-abi` lo reduce a ≈25 MB.
 
 ---
 

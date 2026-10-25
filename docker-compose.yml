@@ -48,7 +48,7 @@ services:
       DATABASE_PORT: "5432"
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
-      # La API sirve el build web de Flutter en el mismo origen (ADR 0010).
+      # La API sirve el build web de Flutter en el mismo origen (ADR 0011).
       # Se monta la carpeta `build` completa porque `flutter build web`
       # vuelve a crear `build/web`.
       WEB_DIR: /app/build/web

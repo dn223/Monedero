@@ -6,6 +6,34 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Fase 6 (Android instalable y exposición por link)
+- APK release firmado con un keystore propio fuera del repositorio (`~/.monedero/`), con firma de depuración como respaldo (ADR 0013).
+- Ícono propio para Android y web, generado desde `brand.dart` (`apps/app/tool/icons/generate_icons_test.dart`).
+- Web instalable (PWA): manifiesto completo, pantalla de carga y metadatos en español.
+- La API sirve el build web en el mismo origen (`WEB_DIR`); `dart run tool/share.dart` levanta todo con un quick tunnel de Cloudflare (perfil `compartir`, imagen `cloudflare/cloudflared:2026.9.3`) e imprime el link público con su QR (ADR 0011).
+- La app guarda la URL del servidor (pantalla "Servidor": pegar o escanear el link) sin recompilar.
+- `tool/up.dart` y `tool/share.dart` agregan a `.env` las variables nuevas de `.env.example`; `tool/down.dart` también detiene el túnel.
+- Guías `docs/exposicion.md` y `docs/android.md`; guion de demo desde la app y capturas en el README.
+
+### Agregado — Fase 5 (administración y endurecimiento)
+- Administración conectada: tablero (saldo en circulación, tarjetas por estado, conciliación y gráfico de recargas y cobros de 14 días con vista de tabla), tarjetas (buscar, entregar, reponer, movimientos), titulares (emitir y entregar), cajas (crear con QR de vínculo, revocar) y reiniciar la demo.
+- API: tokens de renovación rotativos (migración `0003_refresh_tokens.sql`, `POST /v1/auth/refresh` y `/logout`), límite de solicitudes por minuto (`RATE_LIMITED`), `GET /v1/admin/stats` y `POST /v1/admin/demo/reset` (ADR 0010 y 0012).
+
+### Agregado — Fase 4 (titular y caja conectados)
+- Inicio de sesión real de los tres roles, con una sesión guardada por rol y renovación automática.
+- Titular: registro con verificación de correo, tarjeta virtual con saldo (caché "no actualizado" sin conexión), movimientos, QR real, pago con código de caja, cambio de PIN, reporte de pérdida y buzón de correos en modo demo.
+- Caja: vínculo del dispositivo con la credencial de terminal (o caja demo propia), `CardReader`/`SimulatedCardReader` (QR con cámara, lista demo, número), cobro con PIN, recarga y comprobante tipo ticket; `NfcMifareCardReader` como esqueleto para la Fase 7.
+- `core`: `QrPayloads` (QR de tarjeta, vínculo de caja y URL del servidor) y el código `RATE_LIMITED`.
+- API: códigos de verificación y de pérdida en pantalla y buzón solo con `DEMO_MODE=true`, `POST /v1/auth/cardholders/resend-code`, `GET /v1/cards/terminal`, `POST /v1/demo/terminals`, `GET /v1/demo/inbox`; la búsqueda de titulares incluye su tarjeta vigente. `docs/openapi.yaml` documenta además las rutas de pago con código de caja que faltaban.
+
+### Cambiado
+- Versión 0.6.0 de la app y de la API.
+- Las vistas de diseño de la Fase 3 (`features/preview`) se reemplazaron por las pantallas reales.
+- Las pruebas de integración usan una base por archivo y corren de a una (`api/dart_test.yaml`).
+
+### Corregido
+- `CHANGELOG.md` tenía doble codificación UTF-8 (acentos ilegibles).
+
 ### Agregado — Fase 3 (vistas de diseño)
 - Vistas de titular (`/titular`), caja (`/caja`) y administración (`/admin`) con datos de ejemplo, en el estilo de la app; botones de rol habilitados en la pantalla inicial.
 - Fases reordenadas: 4 conecta titular y caja, 5 conecta administración, 6 Android, pulido y despliegue.

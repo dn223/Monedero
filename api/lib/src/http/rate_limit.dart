@@ -11,7 +11,7 @@ import 'json.dart';
 /// se limitan. Las rutas de inicio de sesión, registro, renovación y sesiones
 /// demo tienen un límite más estricto ([authPerMinute]) para frenar ataques
 /// de fuerza bruta. Los contadores viven en memoria: con varias réplicas de
-/// la API habría que moverlos a un almacén compartido (ver docs/adr/0009).
+/// la API habría que moverlos a un almacén compartido (ver docs/adr/0010).
 class RateLimiter {
   /// Crea el limitador. Un límite en `0` lo desactiva.
   RateLimiter({

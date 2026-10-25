@@ -1,14 +1,19 @@
 openapi: 3.1.0
 info:
   title: Monedero API
-  version: 0.2.0
+  version: 0.6.0
   summary: API del monedero electrónico prepago de circuito cerrado (prototipo UFG).
   description: |
     Convenciones (ver docs/api.md):
     - Dinero siempre como entero en centavos (`*Cents`).
     - Recargas, cobros y reposiciones exigen `Idempotency-Key`.
     - Los errores siempre usan el esquema `ApiError`.
+    - Límite de solicitudes por cliente y minuto: `429 RATE_LIMITED` con `Retry-After`.
+    - Con `DEMO_MODE=true` algunas respuestas incluyen `demoCode` (el código que
+      en producción solo llega por correo) y existen las rutas `/v1/demo/...`.
 servers:
+  - url: /
+    description: Mismo origen que la app web (localhost:8080 o el link del túnel)
   - url: http://localhost:8080
     description: Local (Docker Compose)
   - url: http://10.0.2.2:8080
@@ -69,6 +74,7 @@ paths:
                 properties:
                   cardholderId: {type: string, format: uuid}
                   email: {type: string}
+                  demoCode: {type: string, description: 'Solo con DEMO_MODE=true.'}
         '400': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
 
@@ -147,7 +153,15 @@ paths:
       summary: Reportar pérdida (envía código)
       parameters: [{$ref: '#/components/parameters/Id'}]
       responses:
-        '202': {description: Código enviado.}
+        '202':
+          description: Código enviado al correo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codeSent: {type: boolean}
+                  demoCode: {type: string, description: 'Solo con DEMO_MODE=true.'}
         '409': {$ref: '#/components/responses/Error'}
 
   /v1/me/cards/{id}/loss-reports/confirm:
@@ -390,6 +404,203 @@ paths:
         '200': {description: Tarjetas.}
         '403': {$ref: '#/components/responses/Error'}
 
+  /v1/auth/cardholders/resend-code:
+    post:
+      tags: [Autenticación]
+      operationId: resendVerificationCode
+      summary: Reenviar el código de verificación (misma respuesta exista o no la cuenta)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [email], properties: {email: {type: string}}}
+      responses:
+        '202':
+          description: Si la cuenta existe y no está verificada, se envió un código nuevo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codeSent: {type: boolean}
+                  demoCode: {type: string, description: 'Solo con DEMO_MODE=true.'}
+
+  /v1/auth/refresh:
+    post:
+      tags: [Autenticación]
+      operationId: refreshSession
+      summary: Renovar la sesión (rota el token de renovación; ADR 0010)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [refreshToken], properties: {refreshToken: {type: string}}}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '401': {$ref: '#/components/responses/Error'}
+
+  /v1/auth/logout:
+    post:
+      tags: [Autenticación]
+      operationId: logout
+      summary: Cerrar sesión (revoca el token de renovación)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [refreshToken], properties: {refreshToken: {type: string}}}
+      responses:
+        '200': {description: Sesión cerrada.}
+
+  /v1/me/payments:
+    post:
+      tags: [Titular]
+      operationId: payAtTerminal
+      summary: El titular paga desde su app en la caja con su código de 6 dígitos
+      description: Mismo cobro que `/v1/cards/debits` (FOR UPDATE, idempotencia, PIN sobre el límite) con la tarjeta ACTIVE del titular.
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [terminalCode, amountCents]
+              properties:
+                terminalCode: {type: string, pattern: '^\d{6}$'}
+                amountCents: {type: integer, format: int64, minimum: 1}
+                pin: {type: string, pattern: '^\d{4}$'}
+      responses:
+        '201': {$ref: '#/components/responses/Receipt'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/cards/terminal:
+    get:
+      tags: [Caja]
+      operationId: describeTerminal
+      summary: Nombre y código de pago de la caja de la credencial enviada
+      security: [{bearerAuth: [], terminalToken: []}]
+      responses:
+        '200':
+          description: Caja.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terminalId: {type: string, format: uuid}
+                  name: {type: string}
+                  payCode: {type: string, pattern: '^\d{6}$'}
+        '403': {$ref: '#/components/responses/Error'}
+
+  /v1/cards/terminal-activity:
+    get:
+      tags: [Caja]
+      operationId: terminalActivity
+      summary: Últimos 10 movimientos de la caja (incluye pagos con código)
+      security: [{bearerAuth: [], terminalToken: []}]
+      responses:
+        '200': {$ref: '#/components/responses/Transactions'}
+
+  /v1/admin/stats:
+    get:
+      tags: [Administración]
+      operationId: adminStats
+      summary: Indicadores del tablero
+      responses:
+        '200':
+          description: Tarjetas por estado, saldo en circulación y serie diaria de 14 días (zona America/El_Salvador).
+          content:
+            application/json:
+              example:
+                cardsByStatus: {PENDING: 0, ACTIVE: 2, BLOCKED: 0, REPLACED: 0}
+                totalBalanceCents: 6500
+                cardholders: 2
+                activeTerminals: 1
+                transactions: 2
+                timeZone: America/El_Salvador
+                daily: [{day: '2026-10-25', topUpCents: 6500, debitCents: 0, operations: 2}]
+
+  /v1/admin/demo/reset:
+    post:
+      tags: [Administración, Demo]
+      operationId: resetDemo
+      summary: Reiniciar la demo (borra todo y siembra; solo DEMO_MODE=true; ADR 0012)
+      responses:
+        '200': {description: Demo reiniciada; las sesiones anteriores dejan de servir.}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/demo/terminals:
+    post:
+      tags: [Demo]
+      operationId: createDemoTerminal
+      summary: Crear "Caja demo N" para este dispositivo (cajero, solo DEMO_MODE=true)
+      responses:
+        '201': {description: 'Caja creada: terminalId, name, payCode y terminalToken (una sola vez).'}
+        '403': {$ref: '#/components/responses/Error'}
+
+  /v1/demo/inbox:
+    get:
+      tags: [Demo]
+      operationId: demoInbox
+      summary: Correos recibidos por el titular autenticado (en memoria; solo DEMO_MODE=true)
+      responses:
+        '200':
+          description: El más reciente primero.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        subject: {type: string}
+                        text: {type: string}
+                        sentAt: {type: string, format: date-time}
+        '403': {$ref: '#/components/responses/Error'}
+
+  /v1/demo/cashier-session:
+    post:
+      tags: [Demo]
+      operationId: demoCashierSession
+      summary: Sesión de cajero y credencial de "Caja Demo" sin contraseña (solo DEMO_MODE=true)
+      security: []
+      responses:
+        '200': {description: 'Sesión (ver Session) más terminalId, name, payCode y terminalToken.'}
+        '403': {$ref: '#/components/responses/Error'}
+
+  /v1/demo/holder-session:
+    post:
+      tags: [Demo]
+      operationId: demoHolderSession
+      summary: Sesión de un titular verificado sin contraseña (solo DEMO_MODE=true)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [email], properties: {email: {type: string}}}
+      responses:
+        '200': {$ref: '#/components/responses/Session'}
+        '403': {$ref: '#/components/responses/Error'}
+
+  /v1/demo/terminal-activity/{payCode}:
+    get:
+      tags: [Demo]
+      operationId: demoTerminalActivity
+      summary: Movimientos de la caja con ese código (cajero, solo DEMO_MODE=true)
+      parameters: [{name: payCode, in: path, required: true, schema: {type: string}}]
+      responses:
+        '200': {$ref: '#/components/responses/Transactions'}
+
 components:
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -449,6 +660,8 @@ components:
               accessToken: {type: string}
               tokenType: {type: string, enum: [Bearer]}
               expiresInSeconds: {type: integer}
+              refreshToken: {type: string, description: 'Se envía una vez; la base guarda su SHA-256.'}
+              refreshExpiresInSeconds: {type: integer}
               role: {type: string, enum: [CARDHOLDER, CASHIER, ADMIN]}
               userId: {type: string, format: uuid}
               fullName: {type: string}
@@ -513,6 +726,6 @@ components:
           properties:
             code:
               type: string
-              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, INTERNAL_ERROR]
+              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, INTERNAL_ERROR]
             message: {type: string}
             details: {type: object, additionalProperties: true}

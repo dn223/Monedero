@@ -74,7 +74,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         ),
       );
     })
-    // Renovación de sesión: rota el token de renovación (ver ADR 0009).
+    // Renovación de sesión: rota el token de renovación (ver ADR 0010).
     ..post('/v1/auth/refresh', (Request r) async {
       final b = await readJson(r);
       return jsonResponse(
@@ -102,7 +102,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       final code = await s.cards.startLossReport(p.id, id);
       return jsonResponse({
         'codeSent': true,
-        // Solo en modo demo: el código se ve en pantalla (ver ADR 0010).
+        // Solo en modo demo: el código se ve en pantalla (ver ADR 0011).
         if (config.demoMode) 'demoCode': code,
       }, status: 202);
     })

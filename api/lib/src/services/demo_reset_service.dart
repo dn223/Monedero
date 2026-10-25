@@ -14,7 +14,7 @@ import '../seed.dart';
 /// **Solo con `DEMO_MODE=true`.** Es la única parte de la API que usa al
 /// dueño del esquema ([ownerDatabase]): el usuario `monedero_app` no puede
 /// borrar movimientos (regla 6). En producción no se configura y la ruta
-/// responde `DEMO_MODE_DISABLED` (ver docs/adr/0011).
+/// responde `DEMO_MODE_DISABLED` (ver docs/adr/0012).
 class DemoResetService {
   /// Crea el servicio.
   DemoResetService(this.config, this.ownerDatabase, this.migrationsDir);
