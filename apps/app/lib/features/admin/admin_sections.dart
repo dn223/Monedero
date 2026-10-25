@@ -587,8 +587,8 @@ class _CredentialDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'En el dispositivo de la caja, entra a Caja → Escanear QR de '
-                'la caja. Esta credencial no se vuelve a mostrar.',
+                'En el dispositivo de la caja, abre Caja y elige "Escanear QR '
+                'de la caja". Esta credencial no se vuelve a mostrar.',
               ),
               const SizedBox(height: 16),
               QrBox(

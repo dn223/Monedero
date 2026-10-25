@@ -96,6 +96,7 @@ class _DailyChartState extends State<DailyChart> {
                           _Tooltip(
                             day: widget.days[selected],
                             anchorX: geometry.centerOf(selected),
+                            band: geometry.band,
                             width: box.maxWidth,
                           ),
                       ],
@@ -296,11 +297,13 @@ class _Tooltip extends StatelessWidget {
   const _Tooltip({
     required this.day,
     required this.anchorX,
+    required this.band,
     required this.width,
   });
 
   final Map<String, Object?> day;
   final double anchorX;
+  final double band;
   final double width;
 
   @override
@@ -308,7 +311,11 @@ class _Tooltip extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = AppPalette.of(context);
     const boxWidth = 168.0;
-    final left = (anchorX - boxWidth / 2).clamp(0.0, width - boxWidth);
+    // A la derecha de la columna; si no cabe, a la izquierda.
+    final right = anchorX + band / 2 + 8;
+    final left = right + boxWidth <= width
+        ? right
+        : (anchorX - band / 2 - 8 - boxWidth).clamp(0.0, width - boxWidth);
     Widget row(Color color, String label, int cents) => Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Row(

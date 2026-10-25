@@ -101,9 +101,9 @@ class Receipt extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Saldo restante',
+                        topUp ? 'Saldo nuevo' : 'Saldo restante',
                         style: TextStyle(
                           color: ink,
                           fontWeight: FontWeight.w600,

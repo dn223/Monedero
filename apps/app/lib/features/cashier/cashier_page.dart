@@ -122,7 +122,8 @@ class _TerminalLinkPageState extends ConsumerState<TerminalLinkPage> {
           const SizedBox(height: 4),
           Text(
             'Cada dispositivo de caja necesita su credencial. Administración '
-            'la genera en Cajas → Nueva caja y la muestra una sola vez.',
+            'la genera en Cajas, con el botón "Nueva caja", y la muestra una '
+            'sola vez.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -400,7 +401,7 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
       body: TwoColumns(
         start: [
           Text(
-            'Atiende ${widget.session.firstName}',
+            'Sesión de ${widget.session.fullName}',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SectionTitle('Tarjeta'),

@@ -37,12 +37,13 @@ class VirtualCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // Colores fijos de la marca (no los del tema): la tarjeta se ve igual
+    // que una física en modo claro y oscuro.
     final active = status == 'ACTIVE' || status == 'PENDING';
     final colors = active
-        ? [scheme.primary, Color.lerp(scheme.primary, Colors.black, 0.45)!]
-        : [scheme.outline, Color.lerp(scheme.outline, Colors.black, 0.5)!];
-    final ink = active ? scheme.onPrimary : Colors.white;
+        ? [Brand.seedColor, Color.lerp(Brand.seedColor, Colors.black, 0.5)!]
+        : [const Color(0xFF6F7973), const Color(0xFF3A403C)];
+    const ink = Colors.white;
     final shown = RegExp(r'^\d{16}$').hasMatch(number)
         ? Fmt.cardNumber(number)
         : number;
