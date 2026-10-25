@@ -13,6 +13,7 @@ export 'src/errors.dart';
 export 'src/mailer.dart';
 export 'src/security.dart';
 export 'src/seed.dart';
+export 'src/services/demo_reset_service.dart';
 export 'src/services/replacement_service.dart' show FaultHook;
 export 'src/services/services.dart';
 export 'src/version.dart' show apiVersion;

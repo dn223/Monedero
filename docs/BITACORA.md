@@ -14,6 +14,20 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-10-25 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo:**
+- Fases 4 y 5 en la rama `feat/fase-4-6-demo`: la app quedó conectada a la API en los tres roles (inicio de sesión real con sesión guardada por rol; titular con registro, saldo, QR, pago con código, PIN, pérdida y buzón demo; caja con vínculo de terminal, lectura simulada por QR/lista/número, cobro con PIN, recarga y comprobante; administración con tablero, tarjetas, titulares, cajas y reinicio de la demo).
+- API: renovación de sesión con tokens rotativos (migración `0003`), límite de solicitudes por minuto, códigos de correo visibles en modo demo, buzón demo, cajas demo por dispositivo, tablero de indicadores y reinicio de la demo por API.
+
+**Pendiente:**
+- (Se completa al cerrar la sesión.)
+
+**Problemas conocidos:**
+- (Se completa al cerrar la sesión.)
+
+---
+
 ## 2026-10-22 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo:**

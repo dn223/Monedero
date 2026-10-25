@@ -6,6 +6,7 @@ import 'config.dart';
 import 'errors.dart';
 import 'http/json.dart';
 import 'http/request.dart';
+import 'mailer.dart';
 import 'security.dart';
 import 'services/services.dart';
 
@@ -57,6 +58,13 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         ),
       );
     })
+    ..post('/v1/auth/cardholders/resend-code', (Request r) async {
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.resendVerificationCode(requireString(b, 'email')),
+        status: 202,
+      );
+    })
     ..post('/v1/auth/staff/login', (Request r) async {
       final b = await readJson(r);
       return jsonResponse(
@@ -65,6 +73,18 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
           requireString(b, 'password'),
         ),
       );
+    })
+    // Renovación de sesión: rota el token de renovación (ver ADR 0009).
+    ..post('/v1/auth/refresh', (Request r) async {
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.refresh(requireString(b, 'refreshToken')),
+      );
+    })
+    ..post('/v1/auth/logout', (Request r) async {
+      final b = await readJson(r);
+      await s.auth.logout(requireString(b, 'refreshToken'));
+      return jsonResponse({'loggedOut': true});
     })
     // --- Titular -----------------------------------------------------------
     ..get('/v1/me/cards', (Request r) async {
@@ -79,8 +99,12 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     })
     ..post('/v1/me/cards/<id>/loss-reports', (Request r, String id) async {
       final p = auth(r, holder);
-      await s.cards.startLossReport(p.id, id);
-      return jsonResponse({'codeSent': true}, status: 202);
+      final code = await s.cards.startLossReport(p.id, id);
+      return jsonResponse({
+        'codeSent': true,
+        // Solo en modo demo: el código se ve en pantalla (ver ADR 0010).
+        if (config.demoMode) 'demoCode': code,
+      }, status: 202);
     })
     ..post('/v1/me/cards/<id>/loss-reports/confirm', (
       Request r,
@@ -103,6 +127,13 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       return jsonResponse({'changed': true});
     })
     // --- Caja (rol + credencial de terminal) -------------------------------
+    ..get('/v1/cards/terminal', (Request r) async {
+      auth(r, cashier);
+      final terminalId = await s.terminals.authenticate(
+        r.headers['x-terminal-token'],
+      );
+      return jsonResponse(await s.terminals.describe(terminalId));
+    })
     ..post('/v1/cards/read', (Request r) async {
       auth(r, cashier);
       await s.terminals.authenticate(r.headers['x-terminal-token']);
@@ -215,6 +246,24 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       auth(r, admin);
       return jsonResponse({'items': await s.cards.transactions(id)});
     })
+    ..get('/v1/admin/stats', (Request r) async {
+      auth(r, admin);
+      return jsonResponse(await s.cards.stats());
+    })
+    ..post('/v1/admin/demo/reset', (Request r) async {
+      auth(r, admin);
+      requireDemo();
+      final reset = s.demoReset;
+      if (reset == null) {
+        throw const ApiException(
+          ApiErrorCode.conflict,
+          'El reinicio por API no está configurado en este servidor. '
+          'Usa dart run tool/reset_demo.dart.',
+        );
+      }
+      await reset.reset();
+      return jsonResponse({'reset': true});
+    })
     ..get('/v1/admin/reconciliation', (Request r) async {
       auth(r, admin);
       return jsonResponse(await s.cards.reconciliation());
@@ -264,6 +313,29 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       return jsonResponse(
         await s.auth.demoHolderSession(requireString(b, 'email')),
       );
+    })
+    // Cada dispositivo de caja obtiene su propia "Caja demo N".
+    ..post('/v1/demo/terminals', (Request r) async {
+      requireDemo();
+      final p = auth(r, cashier);
+      return jsonResponse(await s.terminals.createDemo(p.id), status: 201);
+    })
+    // Buzón: los correos que recibió el titular (códigos y avisos), para
+    // quien prueba sin acceso a Mailpit.
+    ..get('/v1/demo/inbox', (Request r) async {
+      requireDemo();
+      final p = auth(r, holder);
+      final email = await s.auth.emailOf(p.id);
+      return jsonResponse({
+        'items': [
+          for (final m in s.outbox?.messagesFor(email) ?? const <SentMail>[])
+            {
+              'subject': m.subject,
+              'text': m.text,
+              'sentAt': m.sentAt.toUtc().toIso8601String(),
+            },
+        ],
+      });
     })
     ..get('/v1/demo/terminal-activity/<payCode>', (
       Request r,

@@ -5,6 +5,7 @@ import '../mailer.dart';
 import '../security.dart';
 import 'auth_service.dart';
 import 'card_service.dart';
+import 'demo_reset_service.dart';
 import 'ledger_service.dart';
 import 'replacement_service.dart';
 import 'terminal_service.dart';
@@ -17,6 +18,7 @@ class Services {
     Pool<void> pool,
     Mailer mailer, {
     FaultHook? replacementFault,
+    DemoResetService? demoReset,
   }) {
     final hasher = PasswordHasher(rounds: config.passwordHashRounds);
     final tokens = TokenService(config.jwtSecret, config.jwtTtl);
@@ -34,6 +36,11 @@ class Services {
         faultHook: replacementFault,
       ),
       terminals: TerminalService(pool),
+      outbox: switch (mailer) {
+        final MailOutbox outbox => outbox,
+        _ => null,
+      },
+      demoReset: demoReset,
     );
   }
 
@@ -45,6 +52,8 @@ class Services {
     required this.ledger,
     required this.replacements,
     required this.terminals,
+    required this.outbox,
+    required this.demoReset,
   });
 
   /// Pool compartido.
@@ -67,4 +76,10 @@ class Services {
 
   /// Terminales.
   final TerminalService terminals;
+
+  /// Últimos correos enviados (buzón de la demo), si el mailer los guarda.
+  final MailOutbox? outbox;
+
+  /// Reinicio de la demo por API; `null` si no está configurado.
+  final DemoResetService? demoReset;
 }

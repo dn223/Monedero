@@ -70,6 +70,29 @@ class TerminalService {
     };
   }
 
+  /// Solo modo demo: crea una caja nueva "Caja demo N" para el dispositivo
+  /// que la pide, así varias personas pueden hacer de cajero a la vez sin
+  /// invalidarse la credencial entre sí.
+  Future<Map<String, Object?>> createDemo(String staffId) async {
+    final count =
+        (await query(
+              pool,
+              "SELECT count(*)::int AS n FROM terminals WHERE name LIKE 'Caja demo %'",
+            )).first['n']
+            as int;
+    return create('Caja demo ${count + 1}', staffId);
+  }
+
+  /// Nombre y código de pago del terminal [terminalId] (la caja lo muestra).
+  Future<Map<String, Object?>> describe(String terminalId) async {
+    final t = (await query(
+      pool,
+      'SELECT id, name, pay_code FROM terminals WHERE id = @id:uuid',
+      {'id': terminalId},
+    )).first;
+    return {'terminalId': t['id'], 'name': t['name'], 'payCode': t['pay_code']};
+  }
+
   /// Devuelve el id del terminal activo con [token] o lanza
   /// `TERMINAL_NOT_AUTHORIZED`.
   Future<String> authenticate(String? token) async {

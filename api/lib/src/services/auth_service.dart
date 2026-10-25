@@ -71,13 +71,38 @@ class AuthService {
         'Ya existe una cuenta con ese correo.',
       );
     }
-    await sendCode(
+    final code = await sendCode(
       cardholderId: id,
       email: normalized,
       purpose: 'VERIFY_EMAIL',
       subject: 'Tu código de verificación',
     );
-    return {'cardholderId': id, 'email': normalized};
+    return {
+      'cardholderId': id,
+      'email': normalized,
+      // Solo en modo demo: quien prueba desde un link público no ve Mailpit.
+      if (config.demoMode) 'demoCode': code,
+    };
+  }
+
+  /// Envía un código de verificación nuevo si [email] pertenece a un titular
+  /// sin verificar. Responde igual exista o no la cuenta, para no revelar
+  /// qué correos están registrados.
+  Future<Map<String, Object?>> resendVerificationCode(String email) async {
+    final holder = await _holderByEmail(email);
+    String? code;
+    if (holder != null && holder['email_verified_at'] == null) {
+      code = await sendCode(
+        cardholderId: holder['id'] as String,
+        email: email.trim().toLowerCase(),
+        purpose: 'VERIFY_EMAIL',
+        subject: 'Tu código de verificación',
+      );
+    }
+    return {
+      'codeSent': true,
+      if (config.demoMode && code != null) 'demoCode': code,
+    };
   }
 
   /// Confirma el correo con el código recibido.
@@ -123,6 +148,71 @@ class AuthService {
       role: Role.cardholder,
     );
     return _session(principal, holder['full_name'] as String);
+  }
+
+  /// Renueva la sesión con un token de renovación vigente.
+  ///
+  /// Rotación: el token usado queda revocado y se emite uno nuevo junto con
+  /// un JWT nuevo. Un token vencido, revocado o de personal desactivado
+  /// responde `UNAUTHORIZED` y la app vuelve a pedir inicio de sesión.
+  Future<Map<String, Object?>> refresh(String refreshToken) async {
+    const expired = ApiException(
+      ApiErrorCode.unauthorized,
+      'La sesión venció. Inicia sesión de nuevo.',
+    );
+    return pool.runTx((tx) async {
+      final row = (await query(
+        tx,
+        'SELECT id, subject_id, role FROM refresh_tokens '
+        'WHERE token_hash = @h AND revoked_at IS NULL AND expires_at > now() '
+        'FOR UPDATE',
+        {'h': sha256Hex(refreshToken)},
+      )).firstOrNull;
+      if (row == null) throw expired;
+      await query(
+        tx,
+        'UPDATE refresh_tokens SET revoked_at = now() WHERE id = @id:uuid',
+        {'id': row['id']},
+      );
+      final role = Role.fromWire(row['role'] as String);
+      final subject = row['subject_id'] as String;
+      final person = (await query(
+        tx,
+        role == Role.cardholder
+            ? 'SELECT full_name FROM cardholders WHERE id = @id:uuid'
+            : 'SELECT full_name FROM staff_users WHERE id = @id:uuid AND active',
+        {'id': subject},
+      )).firstOrNull;
+      if (person == null) throw expired;
+      return _session(
+        Principal(id: subject, role: role),
+        person['full_name'] as String,
+        session: tx,
+      );
+    });
+  }
+
+  /// Cierra la sesión revocando [refreshToken]. No falla si ya no servía.
+  Future<void> logout(String refreshToken) async {
+    await query(
+      pool,
+      'UPDATE refresh_tokens SET revoked_at = now() '
+      'WHERE token_hash = @h AND revoked_at IS NULL',
+      {'h': sha256Hex(refreshToken)},
+    );
+  }
+
+  /// Correo del titular [cardholderId] (buzón de la demo).
+  Future<String> emailOf(String cardholderId) async {
+    final row = (await query(
+      pool,
+      'SELECT email::text AS email FROM cardholders WHERE id = @id:uuid',
+      {'id': cardholderId},
+    )).firstOrNull;
+    if (row == null) {
+      throw const ApiException(ApiErrorCode.notFound, 'Titular no encontrado.');
+    }
+    return row['email'] as String;
   }
 
   /// Inicio de sesión de cajeros y administradores.
@@ -210,8 +300,9 @@ class AuthService {
     );
   }
 
-  /// Genera, guarda (hash) y envía un código de 6 dígitos.
-  Future<void> sendCode({
+  /// Genera, guarda (hash) y envía un código de 6 dígitos; lo devuelve para
+  /// que, solo en modo demo, la API pueda mostrarlo en pantalla.
+  Future<String> sendCode({
     required String cardholderId,
     required String email,
     required String purpose,
@@ -232,6 +323,7 @@ class AuthService {
           'Tu código es $code\n\nVence en 10 minutos. '
           'Si no lo solicitaste, ignora este correo.',
     );
+    return code;
   }
 
   /// Valida el código más reciente de [purpose]; aplica límite de intentos.
@@ -298,12 +390,34 @@ class AuthService {
         {'e': email.trim().toLowerCase()},
       )).firstOrNull;
 
-  Map<String, Object?> _session(Principal principal, String name) => {
-    'accessToken': tokens.issue(principal),
-    'tokenType': 'Bearer',
-    'expiresInSeconds': config.jwtTtl.inSeconds,
-    'role': principal.role.wireName,
-    'userId': principal.id,
-    'fullName': name,
-  };
+  /// Sesión nueva: JWT de corta duración y token de renovación (solo su
+  /// SHA-256 queda en la base).
+  Future<Map<String, Object?>> _session(
+    Principal principal,
+    String name, {
+    Session? session,
+  }) async {
+    final refreshToken = randomToken();
+    await query(
+      session ?? pool,
+      'INSERT INTO refresh_tokens (subject_id, role, token_hash, expires_at) '
+      'VALUES (@s:uuid, @r, @h, now() + make_interval(secs => @ttl))',
+      {
+        's': principal.id,
+        'r': principal.role.wireName,
+        'h': sha256Hex(refreshToken),
+        'ttl': config.refreshTtl.inSeconds,
+      },
+    );
+    return {
+      'accessToken': tokens.issue(principal),
+      'tokenType': 'Bearer',
+      'expiresInSeconds': config.jwtTtl.inSeconds,
+      'refreshToken': refreshToken,
+      'refreshExpiresInSeconds': config.refreshTtl.inSeconds,
+      'role': principal.role.wireName,
+      'userId': principal.id,
+      'fullName': name,
+    };
+  }
 }

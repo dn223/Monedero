@@ -298,7 +298,7 @@ void main() {
       expect((await h.cardState(cardId)).difference, 0);
       expect(
         h.mailer.sent.last,
-        isA<({String to, String subject, String text})>()
+        isA<SentMail>()
             .having((m) => m.to, 'to', email)
             .having((m) => m.text, 'text', contains(r'$12.65')),
       );

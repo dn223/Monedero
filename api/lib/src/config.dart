@@ -21,6 +21,11 @@ class ApiConfig {
     this.smtpPort = 1025,
     this.mailFrom = 'no-responder@monedero.local',
     this.passwordHashRounds = 10,
+    this.refreshTtl = const Duration(days: 7),
+    this.rateLimitPerMinute = 0,
+    this.rateLimitAuthPerMinute = 0,
+    this.rateLimitTrustProxy = false,
+    this.webDir = '',
   });
 
   /// Construye la configuración desde un mapa de entorno, normalmente
@@ -53,6 +58,14 @@ class ApiConfig {
       smtpHost: env['SMTP_HOST'] ?? 'localhost',
       smtpPort: _int(env, 'SMTP_PORT', _int(env, 'MAILPIT_SMTP_PORT', 1025)),
       mailFrom: env['MAIL_FROM'] ?? 'no-responder@monedero.local',
+      refreshTtl: Duration(days: _int(env, 'REFRESH_TOKEN_TTL_DAYS', 7)),
+      rateLimitPerMinute: _int(env, 'RATE_LIMIT_PER_MINUTE', 600),
+      rateLimitAuthPerMinute: _int(env, 'RATE_LIMIT_AUTH_PER_MINUTE', 30),
+      rateLimitTrustProxy: _parseBool(
+        env['RATE_LIMIT_TRUST_PROXY'],
+        name: 'RATE_LIMIT_TRUST_PROXY',
+      ),
+      webDir: env['WEB_DIR'] ?? '',
     );
   }
 
@@ -103,6 +116,26 @@ class ApiConfig {
 
   /// Costo de bcrypt (las pruebas usan uno menor para ir rápido).
   final int passwordHashRounds;
+
+  /// Duración de los tokens de renovación de sesión (refresh).
+  final Duration refreshTtl;
+
+  /// Solicitudes por minuto y cliente a `/v1/...`. `0` desactiva el límite
+  /// (solo en pruebas; desde el entorno el valor por defecto es 600).
+  final int rateLimitPerMinute;
+
+  /// Límite más estricto para inicio de sesión, registro y sesiones demo.
+  /// `0` lo desactiva (desde el entorno el valor por defecto es 30).
+  final int rateLimitAuthPerMinute;
+
+  /// Si es `true`, identifica al cliente por `CF-Connecting-IP` o
+  /// `X-Forwarded-For` (detrás del túnel de Cloudflare o de un proxy).
+  /// Solo debe activarse cuando un proxy confiable pone esos encabezados.
+  final bool rateLimitTrustProxy;
+
+  /// Carpeta con el build web de Flutter que la API sirve en `/`
+  /// (vacío = no sirve la app web).
+  final String webDir;
 
   /// Lanza [StateError] si faltan los secretos necesarios para operar.
   void requireSecrets() {

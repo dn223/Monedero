@@ -26,6 +26,9 @@ RUN dart pub get --offline \
 FROM scratch
 COPY --from=build /runtime/ /
 COPY --from=build /out/server /app/server
+# Migraciones: solo las usa el reinicio de la demo por API (DEMO_MODE=true).
+COPY db/migrations /app/db/migrations
+WORKDIR /app
 
 EXPOSE 8080
 ENTRYPOINT ["/app/server"]
