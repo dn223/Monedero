@@ -88,6 +88,7 @@ Solo para la demo local; nunca se usan en producción.
 | [docs/demo.md](docs/demo.md) | Guion de demostración de 10 minutos |
 | [docs/exposicion.md](docs/exposicion.md) | Día de la exposición: link público para el ingeniero |
 | [docs/android.md](docs/android.md) | APK: compilar, firmar e instalar |
+| [docs/monedero-doc.pdf](docs/monedero-doc.pdf) | Documento de la presentación del avance, en 3 partes (fuente: `docs/presentacion/`) |
 | [docs/nfc.md](docs/nfc.md) | Plan para tarjetas físicas MIFARE Classic |
 | [docs/deploy-contabo.md](docs/deploy-contabo.md) | Producción (solo preparada) |
 | [docs/adr/](docs/adr/) | Decisiones técnicas |
