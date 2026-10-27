@@ -15,6 +15,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - `tool/up.dart` y `tool/share.dart` agregan a `.env` las variables nuevas de `.env.example`; `tool/down.dart` también detiene el túnel.
 - Guías `docs/exposicion.md` y `docs/android.md`; guion de demo desde la app y capturas en el README.
 - Documento de la presentación del avance (`docs/monedero-doc.pdf`) actualizado a las fases 1 a 6; su fuente queda versionada en `docs/presentacion/monedero-doc.html`.
+- Presentación de entrada de 5 diapositivas con el estilo de la app (`docs/presentacion-intro.pdf`, fuente en `docs/presentacion/intro-slides.html`), para abrir la exposición antes de mostrar el sistema.
 
 ### Agregado — Fase 5 (administración y endurecimiento)
 - Administración conectada: tablero (saldo en circulación, tarjetas por estado, conciliación y gráfico de recargas y cobros de 14 días con vista de tabla), tarjetas (buscar, entregar, reponer, movimientos), titulares (emitir y entregar), cajas (crear con QR de vínculo, revocar) y reiniciar la demo.

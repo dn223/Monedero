@@ -22,6 +22,7 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 - Fase 6: APK release firmado (keystore en `C:\Users\alexi\.monedero\`, fuera de git), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `dart run tool/share.dart` abre un quick tunnel de Cloudflare en Docker.
 - Interfaz pulida con los skills `frontend-design` y `dataviz` (paleta del gráfico validada para daltonismo). Probada en el navegador a ancho de escritorio y de celular, en claro y oscuro, y por el link público.
 - Documento de la presentación del avance (`docs/monedero-doc.pdf`) actualizado a las fases 1 a 6, con capturas nuevas; la fuente HTML queda en `docs/presentacion/` para regenerarlo con Chrome.
+- (2026-10-27) Presentación de entrada de 5 diapositivas en PDF con el estilo de la app (`docs/presentacion-intro.pdf`): portada, qué es, arquitectura y reglas del dinero, lo que ya funciona, y paso al sistema en vivo.
 - Documentación: README con capturas, `docs/exposicion.md`, `docs/android.md`, demo desde la app, API/OpenAPI, base de datos, arquitectura, setup (versiones), pruebas, dominio, roadmap con plan de entregas, ADR 0010–0013. Se reparó la doble codificación de `CHANGELOG.md`.
 
 **Pendiente:**
