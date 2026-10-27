@@ -21,6 +21,7 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 - Migración `0004` (`app_modules`, `module_changes`), `AppModule` y `MODULE_DISABLED` en `core`, `ModuleService` en la API y verificación en cada ruta de módulo.
 - Asistente virtual por reglas para el titular (`POST /v1/assistant/messages`) con datos reales.
 - Pantalla **Administración → Módulos** y chat del asistente en la app; el titular oculta lo apagado.
+- Presentación de entrada (`docs/presentacion-intro.pdf`) con una diapositiva nueva de módulos y asistente; ahora son 6.
 - Pruebas: 3 de `core`, 7 unitarias del asistente, 6 de integración de módulos y 2 de widgets. ADR 0014 y documentación.
 
 **Pendiente:**

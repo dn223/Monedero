@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Monedero · Presentación de entrada</title>
 <!--
-  5 diapositivas de entrada antes de mostrar el sistema (docs/presentacion-intro.pdf).
+  6 diapositivas de entrada antes de mostrar el sistema (docs/presentacion-intro.pdf).
   Mismos colores y estilo de la app (brand.dart: #0B6E4F). Para regenerar:
     "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu ^
       --no-pdf-header-footer --print-to-pdf=docs\presentacion-intro.pdf ^
@@ -95,7 +95,7 @@
   .stat.hero span { color: rgba(255,255,255,.85); }
 
   /* Demo */
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 30px; }
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 30px; }
   .step { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
   .step i { font-style: normal; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--mint-soft); color: var(--brand); font-weight: 800; font-size: 11pt; }
   .step b { display: block; font-size: 13pt; margin-top: 10px; }
@@ -106,6 +106,30 @@
   }
   .ticket b { color: var(--brand); }
   .code { font-variant-numeric: tabular-nums; font-size: 24pt; font-weight: 800; letter-spacing: 4px; color: var(--brand); white-space: nowrap; }
+
+  /* Módulos */
+  .mods { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; margin-top: 20px; flex: 1; }
+  .modlist { background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; align-self: start; }
+  .mod { display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-top: 1px solid var(--line); }
+  .mod:first-child { border-top: 0; }
+  .mod .mi { width: 38px; height: 38px; border-radius: 11px; background: var(--mint-soft); display: grid; place-items: center; font-size: 16pt; flex: none; }
+  .mod b { display: block; font-size: 13.5pt; }
+  .mod span { display: block; font-size: 10.5pt; color: var(--muted); margin-top: 2px; }
+  .sw { margin-left: auto; width: 46px; height: 26px; border-radius: 13px; background: var(--brand); position: relative; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--mint); }
+  .sw.off { background: #DDE4E0; border: 2px solid #8A968F; }
+  .sw.off::after { left: 3px; right: auto; top: 2px; background: #8A968F; }
+  .mod.dim b { color: var(--muted); }
+  .chat { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; align-self: start; box-shadow: 0 14px 30px rgba(6,61,44,.10); }
+  .chat .hd { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .chat .hd .mi { width: 38px; height: 38px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; font-size: 16pt; }
+  .chat .hd b { font-size: 13.5pt; display: block; }
+  .chat .hd span { font-size: 10pt; color: var(--muted); }
+  .msg { max-width: 82%; padding: 10px 14px; font-size: 12pt; line-height: 1.4; margin-top: 10px; border-radius: 16px; }
+  .msg.me { margin-left: auto; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { background: #EAF1EC; border-bottom-left-radius: 4px; }
+  .always { margin-top: 14px; font-size: 11.5pt; color: var(--muted); line-height: 1.4; }
+  .always b { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -129,20 +153,20 @@
       </div>
     </div>
   </div>
-  <p class="foot">Gestión de la Calidad del Software · Universidad Francisco Gavidia · Avance: fases 1 a 6<br>
+  <p class="foot">Gestión de la Calidad del Software · Universidad Francisco Gavidia · Avance: fases 1 a 6 y módulos<br>
   Kevin González · Cesar Cerón · David Navarrete · Leonardo · Bayron · Steven</p>
 </section>
 
 <!-- 2. Qué es -->
 <section class="slide">
   <div class="tag"><div class="logo"></div>Monedero</div>
-  <div class="num">2 / 5</div>
+  <div class="num">2 / 6</div>
   <h2>Como la tarjeta prepago de un supermercado</h2>
   <p class="lead">Cada tarjeta tiene un número único de 16 dígitos y un saldo. Es un proyecto académico, pero está diseñado como si manejara dinero real: no se puede perder ni duplicar un centavo.</p>
   <div class="roles">
-    <div class="role"><div class="ic">👤</div><h3>Titular</h3><p>Ve su saldo y movimientos, muestra su QR en caja o paga desde el celular con el código de la caja. Si pierde la tarjeta, la bloquea al instante.</p></div>
+    <div class="role"><div class="ic">👤</div><h3>Titular</h3><p>Ve su saldo y movimientos, muestra su QR en caja o paga desde el celular con el código de la caja. Resuelve dudas con el asistente y, si pierde la tarjeta, la bloquea al instante.</p></div>
     <div class="role"><div class="ic">🧾</div><h3>Caja</h3><p>Lee la tarjeta, cobra (con PIN si pasa de $25), recarga en múltiplos de $5 y entrega un comprobante.</p></div>
-    <div class="role"><div class="ic">📊</div><h3>Administración</h3><p>Emite y repone tarjetas, autoriza cajas y comprueba que la contabilidad cuadre.</p></div>
+    <div class="role"><div class="ic">📊</div><h3>Administración</h3><p>Emite y repone tarjetas, autoriza cajas, enciende o apaga módulos y comprueba que la contabilidad cuadre.</p></div>
   </div>
   <p class="foot">Una sola app para Android y web, con tema claro y oscuro.</p>
 </section>
@@ -150,7 +174,7 @@
 <!-- 3. Cómo está construido -->
 <section class="slide">
   <div class="tag"><div class="logo"></div>Monedero</div>
-  <div class="num">3 / 5</div>
+  <div class="num">3 / 6</div>
   <h2>La app muestra, la API decide, la base protege</h2>
   <div class="flow">
     <div class="node n1"><b>App Flutter</b><span>Android y web. Ayuda al usuario, pero nunca decide el saldo.</span></div>
@@ -168,10 +192,38 @@
   <p class="foot">Todo corre en una laptop con Docker, a costo $0. El servidor en la nube está diseñado, no contratado.</p>
 </section>
 
-<!-- 4. Avance -->
+<!-- 4. Módulos -->
 <section class="slide">
   <div class="tag"><div class="logo"></div>Monedero</div>
-  <div class="num">4 / 5</div>
+  <div class="num">4 / 6</div>
+  <h2>Módulos que se encienden y apagan</h2>
+  <p class="lead">Cada parte de la app se activa o desactiva desde el sistema, al instante. El backend lo hace cumplir: un módulo apagado no se puede usar.</p>
+  <div class="mods">
+    <div>
+      <div class="modlist">
+        <div class="mod"><div class="mi">💬</div><div><b>Asistente virtual</b><span>Chat que responde dudas con los datos reales</span></div><div class="sw"></div></div>
+        <div class="mod"><div class="mi">🧑</div><div><b>Registro de titulares</b><span>Crear cuenta desde la app</span></div><div class="sw"></div></div>
+        <div class="mod"><div class="mi">🧾</div><div><b>Pago con código de caja</b><span>Pagar desde el celular</span></div><div class="sw"></div></div>
+        <div class="mod dim"><div class="mi">▦</div><div><b>QR de la tarjeta</b><span>Apagado: la API ya no entrega los datos del QR</span></div><div class="sw off"></div></div>
+        <div class="mod"><div class="mi">🔢</div><div><b>Cambio de PIN</b><span>El titular cambia su PIN</span></div><div class="sw"></div></div>
+      </div>
+      <p class="always"><b>Siempre activos:</b> cobros, recargas, reporte de pérdida y reposición, porque protegen el dinero. Cada cambio queda registrado con quién y cuándo.</p>
+    </div>
+    <div class="chat">
+      <div class="hd"><div class="mi">💬</div><div><b>Asistente virtual</b><span>Responde con los datos de tu tarjeta</span></div></div>
+      <div class="msg bot">¡Hola, Ana! Soy el asistente de tu tarjeta. ¿En qué te ayudo?</div>
+      <div class="msg me">¿Cuál es mi saldo?</div>
+      <div class="msg bot">Tu saldo es $42.50.</div>
+      <div class="msg me">Perdí mi tarjeta, ¿qué hago?</div>
+      <div class="msg bot">Toca "Reportar pérdida": con un código de tu correo la tarjeta se bloquea al instante.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Avance -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">5 / 6</div>
   <h2>Lo que ya funciona</h2>
   <div class="two">
     <ul class="checks">
@@ -179,20 +231,21 @@
       <li>Titular y caja conectados a la API real<span>Fase 4: saldo, QR, cobro, recarga, pago con código</span></li>
       <li>Administración y seguridad<span>Fase 5: tablero, reposición, sesión que se renueva, límite de solicitudes</span></li>
       <li>App de Android instalable y link público<span>Fase 6: el ingeniero la prueba desde su propio celular</span></li>
+      <li>Módulos y asistente virtual<span>Se activan desde el sistema y el backend los hace cumplir</span></li>
     </ul>
     <div class="stats">
       <div class="stat hero"><b>$0.00</b><span>Diferencia de conciliación: el saldo de cada tarjeta es igual a la suma de sus movimientos.</span></div>
-      <div class="stat"><b>59</b><span>pruebas automáticas en verde</span></div>
+      <div class="stat"><b>77</b><span>pruebas automáticas en verde</span></div>
       <div class="stat"><b>1,000</b><span>cobros simultáneos a una tarjeta, sin saldo negativo</span></div>
     </div>
   </div>
   <p class="foot">Siguiente entrega: tarjetas físicas con NFC (Fase 7).</p>
 </section>
 
-<!-- 5. Demo -->
+<!-- 6. Demo -->
 <section class="slide">
   <div class="tag"><div class="logo"></div>Monedero</div>
-  <div class="num">5 / 5</div>
+  <div class="num">6 / 6</div>
   <h2>Ahora, el sistema en vivo</h2>
   <div class="steps">
     <div class="step"><i>1</i><b>Registrar</b><span>El titular crea su cuenta y verifica su correo.</span></div>
@@ -203,6 +256,8 @@
     <div class="step"><i>6</i><b>Pérdida</b><span>El titular la bloquea con un código.</span></div>
     <div class="step"><i>7</i><b>Reposición</b><span>Tarjeta nueva con el mismo saldo.</span></div>
     <div class="step"><i>8</i><b>Conciliación</b><span>"Todo cuadra": diferencia $0.00.</span></div>
+    <div class="step"><i>9</i><b>Asistente</b><span>"¿Cuál es mi saldo?" responde con el saldo real.</span></div>
+    <div class="step"><i>10</i><b>Apagar un módulo</b><span>El asistente desaparece y la API lo rechaza.</span></div>
   </div>
   <div class="ticket">
     <div class="code">LINK</div>
