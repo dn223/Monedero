@@ -8,7 +8,7 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 |---|---|---|
 | **1. Esta entrega** (2026-10-25) | Fases 1 a 6: app conectada a la API en los tres roles, administración, renovación de sesión y límites, APK instalable y exposición por link público para el ingeniero | ✅ Lista en la rama `feat/fase-4-6-demo`, pendiente de revisión del equipo |
 | **2. Siguiente entrega** | La última fase de construcción: **Fase 7** (tarjetas físicas NFC). La Fase 8 (producción en Contabo) solo si el equipo aprueba el gasto | Pendiente |
-| **3. Entrega final** | Las observaciones que vaya dejando el ingeniero en las entregas anteriores, más el informe académico | Pendiente |
+| **3. Entrega final** | Las observaciones que vaya dejando el ingeniero en las entregas anteriores, más el informe académico | En curso: módulos activables con asistente virtual (2026-10-27); proyecto desplegado con URL y requerimientos adicionales por confirmar |
 
 ## Prototipo de demostración
 
@@ -27,6 +27,9 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 
 | Prioridad | Pendiente | Notas |
 |---|---|---|
+| P0 | Observaciones del ingeniero: **módulos** activables desde administración, con el asistente como ejemplo | ✅ Hecho (ADR 0014) |
+| P0 | Observaciones del ingeniero: **proyecto desplegado con URL** | Hoy: link temporal con `tool/share.dart`. Un despliegue permanente requiere cuenta y aprobación del equipo (Fase 8) |
+| P0 | Observaciones del ingeniero: confirmar los **requerimientos adicionales** que pidió | Equipo |
 | P0 | Revisar y fusionar `feat/fase-4-6-demo` en `main` | Lo decide el equipo; la sesión de IA no fusionó ni subió la rama |
 | P0 | Ensayar la exposición con `dart run tool/share.dart` | [exposicion.md](exposicion.md) |
 | P0 | Probar el APK en celulares del equipo y respaldar el keystore (`~/.monedero/`) | [android.md](android.md) |

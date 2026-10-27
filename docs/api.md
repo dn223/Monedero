@@ -59,6 +59,7 @@ La app decide por `code`, nunca por `message`.
 | `INVALID_PIN` | 422 | PIN incorrecto (`details.attemptsLeft`) |
 | `INVALID_VERIFICATION_CODE` | 422 | Código de correo incorrecto o vencido |
 | `TOO_MANY_ATTEMPTS` | 429 | PIN bloqueado 15 min (3 fallos) o código con 5 intentos |
+| `MODULE_DISABLED` | 403 | Administración apagó el módulo que se intentó usar (`details.module`) |
 | `RATE_LIMITED` | 429 | Demasiadas solicitudes del mismo cliente en un minuto (`details.retryAfterSeconds`) |
 | `INTERNAL_ERROR` | 500 | Error inesperado (sin detalles internos) |
 
@@ -67,19 +68,22 @@ La app decide por `code`, nunca por `message`.
 | Método | Ruta | Rol | Descripción |
 |---|---|---|---|
 | `GET` | `/health` | público | Estado, versión y modo demo |
-| `POST` | `/v1/auth/cardholders/register` | público | Registro `{fullName, email, password, pin}`; envía código |
+| `POST` | `/v1/auth/cardholders/register` | público | Registro `{fullName, email, password, pin}`; envía código. Módulo `self_registration` |
 | `POST` | `/v1/auth/cardholders/verify-email` | público | `{email, code}` |
 | `POST` | `/v1/auth/cardholders/login` | público | `{email, password}` → JWT |
 | `POST` | `/v1/auth/cardholders/resend-code` | público | `{email}`; reenvía el código si la cuenta no está verificada (responde igual si no existe) |
 | `POST` | `/v1/auth/staff/login` | público | Cajero/administrador → JWT |
 | `POST` | `/v1/auth/refresh` | público | `{refreshToken}` → sesión nueva (el token usado deja de servir) |
 | `POST` | `/v1/auth/logout` | público | `{refreshToken}` → revocado |
-| `GET` | `/v1/me/cards` | titular | Tarjetas con saldo y `credentials` (contenido del QR) |
+| `GET` | `/v1/me/cards` | titular | Tarjetas con saldo y `credentials` (contenido del QR; no viajan si el módulo `card_qr` está apagado) |
 | `GET` | `/v1/me/cards/{id}/transactions` | titular | Historial |
 | `POST` | `/v1/me/cards/{id}/loss-reports` | titular | Envía código de confirmación |
 | `POST` | `/v1/me/cards/{id}/loss-reports/confirm` | titular | `{code}` → `BLOCKED` |
-| `PUT` | `/v1/me/pin` | titular | `{currentPin, newPin}` |
-| `POST` | `/v1/me/payments` | titular | `{terminalCode, amountCents, pin?}` + `Idempotency-Key`: paga en la caja con su código de 6 dígitos |
+| `PUT` | `/v1/me/pin` | titular | `{currentPin, newPin}`. Módulo `pin_change` |
+| `POST` | `/v1/me/payments` | titular | `{terminalCode, amountCents, pin?}` + `Idempotency-Key`: paga en la caja con su código de 6 dígitos. Módulo `holder_payments` |
+| `POST` | `/v1/assistant/messages` | titular | `{message}` → `{intent, reply, suggestions}`: asistente virtual con los datos reales del titular. Módulo `assistant` |
+| `GET` | `/v1/modules` | público | Módulos con `key`, `name`, `description`, `enabled`, `updatedAt` y `updatedByName` |
+| `PUT` | `/v1/admin/modules/{key}` | admin | `{enabled}`: enciende o apaga un módulo y lo registra en `module_changes` |
 | `GET` | `/v1/cards/terminal` | cajero + terminal | Nombre y código de pago de la caja |
 | `GET` | `/v1/cards/terminal-activity` | cajero + terminal | Últimos 10 movimientos de la caja |
 | `POST` | `/v1/cards/read` | cajero + terminal | `{card}` → titular, estado y saldo |
@@ -102,6 +106,20 @@ La app decide por `code`, nunca por `message`.
 | `POST` | `/v1/demo/cashier-session` | público (modo demo) | Sesión de cajero y credencial de "Caja Demo" sin contraseña |
 | `POST` | `/v1/demo/holder-session` | público (modo demo) | `{email}` → sesión del titular sin contraseña |
 | `GET` | `/v1/demo/terminal-activity/{payCode}` | cajero (modo demo) | Movimientos de la caja con ese código |
+
+### Módulos
+
+Administración enciende o apaga partes de la app desde **Administración → Módulos** ([ADR 0014](adr/0014-modulos-activables-y-asistente.md)). La API hace cumplir cada interruptor: con el módulo apagado, su ruta responde `403 MODULE_DISABLED` aunque la app aún muestre el botón.
+
+| Módulo (`key`) | Qué apaga | Ruta que se cierra |
+|---|---|---|
+| `assistant` | Asistente virtual (chatbot) del titular | `POST /v1/assistant/messages` |
+| `self_registration` | Registro de titulares desde la app | `POST /v1/auth/cardholders/register` |
+| `holder_payments` | Pago con código de caja | `POST /v1/me/payments` |
+| `card_qr` | QR de la tarjeta | `GET /v1/me/cards` deja de enviar `credentials` |
+| `pin_change` | Cambio de PIN | `PUT /v1/me/pin` |
+
+No son módulos (siempre activos): recargas y cobros en caja, reporte de pérdida y reposición.
 
 Reiniciar la demo: botón **Reiniciar demo** en Administración (`POST /v1/admin/demo/reset`) o `dart run tool/reset_demo.dart`. Ambos exigen `DEMO_MODE=true`.
 

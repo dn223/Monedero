@@ -14,6 +14,25 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-10-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):
+- Observación del ingeniero (vía Fabio): el proyecto debe tener **módulos** que se activan y desactivan desde el sistema, por ejemplo un chatbot, y el backend debe hacerlo cumplir.
+- Migración `0004` (`app_modules`, `module_changes`), `AppModule` y `MODULE_DISABLED` en `core`, `ModuleService` en la API y verificación en cada ruta de módulo.
+- Asistente virtual por reglas para el titular (`POST /v1/assistant/messages`) con datos reales.
+- Pantalla **Administración → Módulos** y chat del asistente en la app; el titular oculta lo apagado.
+- Pruebas: 3 de `core`, 7 unitarias del asistente, 6 de integración de módulos y 2 de widgets. ADR 0014 y documentación.
+
+**Pendiente:**
+- El ingeniero quiere el proyecto **desplegado con una URL**: hoy es el link temporal de `tool/share.dart`; uno permanente necesita cuenta y aprobación del equipo.
+- Confirmar con el ingeniero cuáles son los "requerimientos adicionales" que pidió.
+- En la exposición, hablar de "módulos", no de "panel de administrador" (indicación de Fabio).
+
+**Problemas conocidos:**
+- El asistente solo entiende las preguntas previstas (saldo, movimientos, recargas, pagos, QR, PIN, pérdida, reposición).
+
+---
+
 ## 2026-10-25 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):

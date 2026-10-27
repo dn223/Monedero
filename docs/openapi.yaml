@@ -26,6 +26,7 @@ tags:
   - name: Caja
   - name: Administración
   - name: Demo
+  - name: Módulos
 
 security:
   - bearerAuth: []
@@ -200,7 +201,79 @@ paths:
                 newPin: {type: string, pattern: '^\d{4}$'}
       responses:
         '200': {description: PIN cambiado.}
+        '403': {description: 'Módulo `pin_change` apagado (`MODULE_DISABLED`).', $ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
+
+  /v1/assistant/messages:
+    post:
+      tags: [Titular, Módulos]
+      operationId: askAssistant
+      summary: Preguntar al asistente virtual (módulo `assistant`)
+      description: Responde por reglas con el saldo y el último movimiento reales del titular. No guarda la conversación.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: {type: string, maxLength: 500}
+      responses:
+        '200':
+          description: Respuesta del asistente.
+          content:
+            application/json:
+              example:
+                intent: balance
+                reply: Tu saldo es $17.35.
+                suggestions: ['¿Cuál fue mi último movimiento?', '¿Cómo recargo?', 'Perdí mi tarjeta']
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {description: 'Rol distinto de titular o módulo apagado (`MODULE_DISABLED`).', $ref: '#/components/responses/Error'}
+
+  /v1/modules:
+    get:
+      tags: [Módulos]
+      operationId: listModules
+      summary: Módulos de la aplicación y si están encendidos
+      security: []
+      responses:
+        '200':
+          description: Todos los módulos, en orden fijo.
+          content:
+            application/json:
+              example:
+                items:
+                  - key: assistant
+                    name: Asistente virtual
+                    description: 'Chat que responde dudas del titular: saldo, recargas, pagos, PIN y pérdida de la tarjeta.'
+                    audience: CARDHOLDER
+                    enabled: true
+                    updatedAt: '2026-10-27T15:00:00Z'
+                    updatedByName: null
+
+  /v1/admin/modules/{key}:
+    put:
+      tags: [Administración, Módulos]
+      operationId: setModule
+      summary: Encender o apagar un módulo
+      description: Queda registrado en `module_changes` con quién y cuándo.
+      parameters:
+        - {name: key, in: path, required: true, schema: {type: string, enum: [assistant, self_registration, holder_payments, card_qr, pin_change]}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: {type: boolean}
+      responses:
+        '200': {description: El módulo con su estado nuevo.}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
 
   /v1/cards/read:
     post:
@@ -726,6 +799,6 @@ components:
           properties:
             code:
               type: string
-              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, INTERNAL_ERROR]
+              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, MODULE_DISABLED, INTERNAL_ERROR]
             message: {type: string}
             details: {type: object, additionalProperties: true}

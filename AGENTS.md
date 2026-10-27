@@ -186,15 +186,16 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-10-25, fases 1 a 6 terminadas en la rama `feat/fase-4-6-demo`, pendiente de revisión y fusión):
+**Estado actual** (2026-10-27, fases 1 a 6 y módulos terminados en la rama `feat/fase-4-6-demo`, pendiente de revisión y fusión):
 - Fases 1–2: monorepo, Docker Compose, `tool/`, CI; `core` (centavos, Luhn, firma HMAC); base con barreras (`0001`, `0002`); API completa con las 5 pruebas obligatorias.
 - Fase 4: la app habla con la API en los tres roles. Sesión por rol (`core/session/`), titular (`features/holder/`), caja (`features/cashier/` + `lib/card_reader/`), inicio de sesión común (`features/auth/`) con cuentas demo en modo demo. Las vistas de diseño de la Fase 3 se eliminaron.
 - Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
 - Fase 6: APK release firmado con keystore en `~/.monedero/` (ADR 0013), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `tool/share.dart` abre un quick tunnel de Cloudflare (ADR 0011, `docs/exposicion.md`).
-- Pruebas: 22 de `core`, 31 de la API y 6 de widgets, todas en verde con `tool/check.dart`.
+- Observaciones del ingeniero: **módulos** activables desde Administración → Módulos (migración `0004`, `AppModule`, `ModuleService`, `MODULE_DISABLED`, ADR 0014) y asistente virtual del titular (`features/assistant/`).
+- Pruebas: 25 de `core`, 44 de la API y 8 de widgets, todas en verde con `tool/check.dart`.
 
 **Siguientes pasos** (siguiente entrega: Fase 7 — NFC):
-1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`.
+1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`. Confirmar los requerimientos adicionales del ingeniero y si acepta el link temporal como despliegue.
 2. Probar el APK en los celulares del equipo y respaldar `~/.monedero/`.
 3. Probar MIFARE Classic en los teléfonos (`docs/nfc.md` § 5) e implementar `NfcMifareCardReader`.
 4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.

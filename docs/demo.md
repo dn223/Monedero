@@ -36,6 +36,7 @@ En modo demo la app los muestra en cada pantalla de inicio de sesión ("Entrar c
 | 5:30 | 6. Reportar la pérdida | Titular → Reportar pérdida → Enviar código → Bloquear tarjeta | Tarjeta "Bloqueada"; la caja recibe "La tarjeta está bloqueada" |
 | 6:30 | 7. Reponer la tarjeta | Administración → Tarjetas → **Reponer** | Tarjeta nueva activa con el mismo saldo; la anterior "Repuesta" |
 | 7:00 | 8. Conciliación | Administración → Resumen | "Todo cuadra" y el gráfico de recargas y cobros |
+| 7:15 | Módulos | Titular → **Asistente** → "¿Cuál es mi saldo?". Luego Administración → **Módulos** → apagar "Asistente virtual" | El asistente responde con el saldo real; al apagarlo, el botón desaparece del titular en 5 s y la API responde `MODULE_DISABLED` |
 | 7:30 | Calidad | `dart run tool/check.dart` o `cd api && dart test` (≈30 s): 1,000 cobros concurrentes, idempotencia, reposición con falla forzada, movimientos inalterables, firma | Todo en verde |
 | 9:00 | Cierre | `docs/ROADMAP.md`: NFC (Fase 7) y producción (Fase 8) | — |
 

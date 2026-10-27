@@ -24,6 +24,7 @@ class RoleScaffold extends StatelessWidget {
     this.actions = const [],
     this.maxWidth = 1100,
     this.bottomNavigationBar,
+    this.floatingActionButton,
     super.key,
   });
 
@@ -44,6 +45,9 @@ class RoleScaffold extends StatelessWidget {
 
   /// Barra inferior opcional (navegación de administración en celular).
   final Widget? bottomNavigationBar;
+
+  /// Botón flotante opcional (asistente del titular).
+  final Widget? floatingActionButton;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +70,7 @@ class RoleScaffold extends StatelessWidget {
         actions: [...actions, const SizedBox(width: 8)],
       ),
       bottomNavigationBar: bottomNavigationBar,
+      floatingActionButton: floatingActionButton,
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,

@@ -83,7 +83,8 @@ erDiagram
 Tablas auxiliares:
 - `verification_codes` (hash SHA-256 del código, propósito `VERIFY_EMAIL` o `REPORT_LOSS`, vencimiento de 10 minutos e intentos).
 - `terminals.pay_code` (migración `0002`): código de 6 dígitos, único, con el que el titular paga desde su app en esa caja.
-- `refresh_tokens` (migración `0003`): tokens de renovación de sesión. Guarda `subject_id` (titular o personal), `role`, el **SHA-256** del token, `expires_at` y `revoked_at`. Cada renovación revoca el usado y crea otro (rotación; [ADR 0010](adr/0010-renovacion-de-sesion-y-limite-de-solicitudes.md)). `subject_id` no es llave foránea porque puede apuntar a `cardholders` o a `staff_users`. La idempotencia vive en `transactions.idempotency_key` y `replacements.idempotency_key`, ambas `UNIQUE`; la reposición usa claves derivadas `<clave>:out` y `<clave>:in` para sus dos movimientos.
+- `refresh_tokens` (migración `0003`): tokens de renovación de sesión. Guarda `subject_id` (titular o personal), `role`, el **SHA-256** del token, `expires_at` y `revoked_at`. Cada renovación revoca el usado y crea otro (rotación; [ADR 0010](adr/0010-renovacion-de-sesion-y-limite-de-solicitudes.md)). `subject_id` no es llave foránea porque puede apuntar a `cardholders` o a `staff_users`.
+- `app_modules` (migración `0004`): un renglón por módulo de la app (`key`, `enabled`, `updated_at`, `updated_by` → `staff_users`). Nombres y descripciones viven en `AppModule` (`packages/core`). `module_changes` guarda cada cambio (quién, cuándo, encendido o apagado) y es de solo inserción para `monedero_app` ([ADR 0014](adr/0014-modulos-activables-y-asistente.md)). La idempotencia vive en `transactions.idempotency_key` y `replacements.idempotency_key`, ambas `UNIQUE`; la reposición usa claves derivadas `<clave>:out` y `<clave>:in` para sus dos movimientos.
 
 ## 2. Barreras en la base
 
@@ -101,7 +102,7 @@ Tablas auxiliares:
 | Rol de PostgreSQL | Uso | Permisos |
 |---|---|---|
 | `monedero_owner` | Dueño del esquema; solo migraciones | Todo sobre el esquema `monedero` |
-| `monedero_app` | Conexión de la API (lo crea `tool/migrate.dart` con `POSTGRES_APP_PASSWORD`) | `SELECT, INSERT` en `transactions` y `replacements`; `SELECT, INSERT, UPDATE` en `cardholders`, `staff_users`, `terminals`, `cards`, `verification_codes`, `refresh_tokens`; `SELECT` en la vista; **nunca** `UPDATE`/`DELETE` en `transactions`, ni DDL |
+| `monedero_app` | Conexión de la API (lo crea `tool/migrate.dart` con `POSTGRES_APP_PASSWORD`) | `SELECT, INSERT` en `transactions` y `replacements`; `SELECT, INSERT, UPDATE` en `cardholders`, `staff_users`, `terminals`, `cards`, `verification_codes`, `refresh_tokens`; `SELECT, UPDATE` en `app_modules`; `SELECT, INSERT` en `module_changes`; `SELECT` en la vista; **nunca** `UPDATE`/`DELETE` en `transactions`, ni DDL |
 
 La API **nunca** se conecta con `monedero_owner`, con una sola excepción acotada a la demo: el botón "Reiniciar demo" (`POST /v1/admin/demo/reset`) solo existe con `DEMO_MODE=true` y abre una conexión de dueño para borrar, migrar y sembrar, igual que `tool/reset_demo.dart` ([ADR 0012](adr/0012-reinicio-de-la-demo-por-api.md)). En producción la API no recibe `POSTGRES_OWNER_PASSWORD`. Ambas contraseñas están en `.env` (`POSTGRES_OWNER_PASSWORD`, `POSTGRES_APP_PASSWORD`).
 

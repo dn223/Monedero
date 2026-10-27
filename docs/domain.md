@@ -128,5 +128,7 @@ Cada caja muestra un **código de caja** de 6 dígitos. El titular, desde su app
 | refresh token | token de renovación | Secreto que permite pedir un JWT nuevo sin volver a escribir la contraseña; se rota en cada uso |
 | rate limit | límite de solicitudes | Máximo de solicitudes por minuto y cliente (`RATE_LIMITED`) |
 | demo inbox | buzón demo | Correos recientes del titular mostrados en la app (solo modo demo) |
+| module | módulo | Parte de la app que administración enciende o apaga (asistente, registro, pago con código, QR, cambio de PIN); la API la bloquea con `MODULE_DISABLED` |
+| assistant | asistente virtual | Chat del titular que responde dudas con sus datos reales; es un módulo |
 | tunnel | túnel / link público | Dirección `https://….trycloudflare.com` temporal hacia la laptop para la exposición |
 | PENDING / ACTIVE / BLOCKED / REPLACED | pendiente / activa / bloqueada / repuesta | Estados de la tarjeta |

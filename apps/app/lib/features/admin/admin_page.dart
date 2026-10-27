@@ -13,6 +13,7 @@ import '../auth/login_page.dart';
 import 'admin_providers.dart';
 import 'admin_sections.dart';
 import 'daily_chart.dart';
+import 'modules_section.dart';
 
 /// Espacio de administración: inicio de sesión o el panel con resumen,
 /// tarjetas, titulares y cajas.
@@ -61,6 +62,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     (Icons.credit_card_outlined, Icons.credit_card_rounded, 'Tarjetas'),
     (Icons.people_outline_rounded, Icons.people_rounded, 'Titulares'),
     (Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'Cajas'),
+    (Icons.extension_outlined, Icons.extension_rounded, 'Módulos'),
   ];
 
   @override
@@ -70,7 +72,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       0 => const DashboardSection(),
       1 => const CardsSection(),
       2 => const HoldersSection(),
-      _ => const TerminalsSection(),
+      3 => const TerminalsSection(),
+      _ => const ModulesSection(),
     };
     return RoleScaffold(
       title: 'Administración',

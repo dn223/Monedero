@@ -6,11 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:monedero_core/monedero_core.dart';
 
 import '../../core/format.dart';
+import '../../core/modules.dart';
 import '../../core/providers.dart';
 import '../../core/session/session.dart';
 import '../../core/widgets/card_widgets.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/layout.dart';
+import '../assistant/assistant_sheet.dart';
 import '../auth/login_page.dart';
 import 'holder_dialogs.dart';
 import 'holder_providers.dart';
@@ -38,13 +40,15 @@ class HolderPage extends ConsumerWidget {
         loginPath: '/v1/auth/cardholders/login',
         sessionProvider: holderSessionProvider,
         demoAccounts: DemoAccounts.holders,
-        footer: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: TextButton(
-            onPressed: () => context.go(RegisterPage.path),
-            child: const Text('¿Aún no tienes cuenta? Créala'),
-          ),
-        ),
+        footer: ref.watch(moduleOnProvider(AppModule.selfRegistration))
+            ? Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: TextButton(
+                  onPressed: () => context.go(RegisterPage.path),
+                  child: const Text('¿Aún no tienes cuenta? Créala'),
+                ),
+              )
+            : null,
       );
     }
     return HolderHome(session: session);
@@ -72,11 +76,9 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-      ref
-        ..invalidate(holderSnapshotProvider)
-        ..invalidate(holderInboxProvider);
-    });
+    // También los módulos: si administración apaga uno, el botón
+    // desaparece sin recargar la página.
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _refresh());
   }
 
   @override
@@ -87,7 +89,8 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
 
   void _refresh() => ref
     ..invalidate(holderSnapshotProvider)
-    ..invalidate(holderInboxProvider);
+    ..invalidate(holderInboxProvider)
+    ..invalidate(modulesProvider);
 
   Future<void> _pay() async {
     final receipt = await showDialog<Map<String, Object?>>(
@@ -134,6 +137,11 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
     final card = data?.card;
     final status = card?['status'] as String?;
     final canOperate = status == 'ACTIVE' && !(data?.isStale ?? true);
+    bool on(AppModule m) => ref.watch(moduleOnProvider(m));
+    final payOn = on(AppModule.holderPayments);
+    final qrOn = on(AppModule.cardQr) && card?['credentials'] != null;
+    final pinOn = on(AppModule.pinChange);
+    final canReport = status == 'ACTIVE' || status == 'PENDING';
 
     return RoleScaffold(
       title: 'Hola, ${widget.session.firstName}',
@@ -146,6 +154,13 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
         ),
         SignOutButton(holderSessionProvider),
       ],
+      floatingActionButton: on(AppModule.assistant) && !(data?.isStale ?? true)
+          ? FloatingActionButton.extended(
+              onPressed: () => showAssistant(context),
+              icon: const Icon(Icons.support_agent_rounded),
+              label: const Text('Asistente'),
+            )
+          : null,
       body: TwoColumns(
         start: [
           if (snapshot.hasError && data == null)
@@ -198,35 +213,36 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
                   'reponerla y pasar tu saldo a la tarjeta nueva.',
                 ),
               ),
-            if (canOperate) ...[
+            if (canOperate && payOn)
               FilledButton.icon(
                 onPressed: _pay,
                 icon: const Icon(Icons.point_of_sale_rounded),
                 label: const Text('Pagar en caja'),
               ),
-              const SizedBox(height: 8),
+            if (canOperate && payOn && qrOn) const SizedBox(height: 8),
+            if (canOperate && qrOn)
               OutlinedButton.icon(
                 onPressed: () => showCardQr(context, card),
                 icon: const Icon(Icons.qr_code_2_rounded),
                 label: const Text('Mostrar mi código QR'),
               ),
-            ],
-            if (!data.isStale) ...[
+            if (!data.isStale && (pinOn || canReport)) ...[
               const SectionTitle('Mi tarjeta'),
               Card(
                 child: Column(
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.pin_outlined),
-                      title: const Text('Cambiar PIN'),
-                      subtitle: const Text(
-                        r'Lo pide la caja en compras de más de $25.00',
+                    if (pinOn)
+                      ListTile(
+                        leading: const Icon(Icons.pin_outlined),
+                        title: const Text('Cambiar PIN'),
+                        subtitle: const Text(
+                          r'Lo pide la caja en compras de más de $25.00',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: _changePin,
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: _changePin,
-                    ),
-                    if (status == 'ACTIVE' || status == 'PENDING') ...[
-                      const Divider(height: 1),
+                    if (canReport) ...[
+                      if (pinOn) const Divider(height: 1),
                       ListTile(
                         leading: Icon(
                           Icons.report_outlined,

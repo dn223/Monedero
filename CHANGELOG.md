@@ -6,6 +6,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Observaciones del ingeniero: módulos
+- Módulos de la aplicación que administración enciende o apaga en **Administración → Módulos**: asistente virtual, registro de titulares, pago con código de caja, QR de la tarjeta y cambio de PIN (migración `0004_app_modules.sql`, `AppModule` en `core`, ADR 0014).
+- La API hace cumplir cada módulo con `403 MODULE_DISABLED`; cada cambio queda en `module_changes` con quién y cuándo. `GET /v1/modules` (público) y `PUT /v1/admin/modules/{key}`.
+- Asistente virtual (chatbot) del titular por reglas, sin servicios externos: responde saldo y último movimiento reales, recargas, pagos, PIN, pérdida y reposición (`POST /v1/assistant/messages`).
+- La app del titular oculta las funciones apagadas y lo nota en 5 segundos sin recargar.
+- Versión 0.7.0.
+
 ### Agregado — Fase 6 (Android instalable y exposición por link)
 - APK release firmado con un keystore propio fuera del repositorio (`~/.monedero/`), con firma de depuración como respaldo (ADR 0013).
 - Ícono propio para Android y web, generado desde `brand.dart` (`apps/app/tool/icons/generate_icons_test.dart`).

@@ -46,6 +46,8 @@ String friendlyError(Object error) {
     ApiErrorCode.forbidden => 'Tu cuenta no tiene permiso para esto.',
     ApiErrorCode.unauthorized => 'Tu sesión venció. Inicia sesión de nuevo.',
     ApiErrorCode.demoModeDisabled => 'El modo demo está desactivado.',
+    ApiErrorCode.moduleDisabled =>
+      'Esta función está desactivada por administración en este momento.',
     _ => error.message,
   };
 }

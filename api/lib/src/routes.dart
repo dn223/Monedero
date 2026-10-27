@@ -30,6 +30,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
   // --- Autenticación -------------------------------------------------------
   router
     ..post('/v1/auth/cardholders/register', (Request r) async {
+      await s.modules.require(AppModule.selfRegistration);
       final b = await readJson(r);
       return jsonResponse(
         await s.auth.registerCardholder(
@@ -89,7 +90,14 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     // --- Titular -----------------------------------------------------------
     ..get('/v1/me/cards', (Request r) async {
       final p = auth(r, holder);
-      return jsonResponse({'items': await s.cards.cardsOf(p.id)});
+      final items = await s.cards.cardsOf(p.id);
+      // Sin el módulo de QR no viajan las credenciales que lo forman.
+      final qr = await s.modules.isEnabled(AppModule.cardQr);
+      return jsonResponse({
+        'items': [
+          for (final c in items) qr ? c : ({...c}..remove('credentials')),
+        ],
+      });
     })
     ..get('/v1/me/cards/<id>/transactions', (Request r, String id) async {
       final p = auth(r, holder);
@@ -118,6 +126,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     })
     ..put('/v1/me/pin', (Request r) async {
       final p = auth(r, holder);
+      await s.modules.require(AppModule.pinChange);
       final b = await readJson(r);
       await s.auth.changePin(
         p.id,
@@ -125,6 +134,33 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         requireString(b, 'newPin'),
       );
       return jsonResponse({'changed': true});
+    })
+    ..post('/v1/assistant/messages', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.assistant.reply(p.id, requireString(b, 'message')),
+      );
+    })
+    // --- Módulos -----------------------------------------------------------
+    // Público: la app decide qué mostrar incluso antes de iniciar sesión.
+    ..get('/v1/modules', (Request r) async {
+      return jsonResponse({'items': await s.modules.list()});
+    })
+    ..put('/v1/admin/modules/<key>', (Request r, String key) async {
+      final p = auth(r, admin);
+      final b = await readJson(r);
+      final enabled = b['enabled'];
+      if (enabled is! bool) {
+        throw const ApiException(
+          ApiErrorCode.validationFailed,
+          'El campo "enabled" debe ser true o false.',
+          details: {'field': 'enabled'},
+        );
+      }
+      return jsonResponse(
+        await s.modules.set(key, enabled: enabled, staffId: p.id),
+      );
     })
     // --- Caja (rol + credencial de terminal) -------------------------------
     ..get('/v1/cards/terminal', (Request r) async {
@@ -350,6 +386,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     // --- Pago del titular en caja -------------------------------------------
     ..post('/v1/me/payments', (Request r) async {
       final p = auth(r, holder);
+      await s.modules.require(AppModule.holderPayments);
       final key = requireIdempotencyKey(r);
       final b = await readJson(r);
       return jsonResponse(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:monedero/brand/brand.dart';
+import 'package:monedero_core/monedero_core.dart';
 
 import 'support.dart';
 
@@ -295,4 +296,110 @@ void main() {
     expect(find.text('Todo cuadra'), findsOneWidget);
     expect(find.text('Recargas'), findsOneWidget);
   });
+
+  testWidgets('módulos: el titular ve solo lo activo y usa el asistente', (
+    tester,
+  ) async {
+    final api = FakeApi({
+      'GET /health': health,
+      'GET /v1/modules': (_) => (200, _modules({'holder_payments'})),
+      'GET /v1/me/cards': (_) => (
+        200,
+        {
+          'items': [_card],
+        },
+      ),
+      'GET /v1/me/cards/c1/transactions': (_) => (200, _transactions),
+      'GET /v1/demo/inbox': (_) => (200, {'items': <Object>[]}),
+      'POST /v1/assistant/messages': (r) {
+        expect((jsonDecode(r.body) as Map)['message'], '¿Cuál es mi saldo?');
+        return (
+          200,
+          {
+            'intent': 'balance',
+            'reply': r'Tu saldo es $50.00.',
+            'suggestions': ['¿Cómo recargo?'],
+          },
+        );
+      },
+    });
+    await pumpApp(
+      tester,
+      api,
+      size: const Size(420, 1600),
+      stored: {
+        'session.CARDHOLDER': jsonEncode(
+          _storedSession('CARDHOLDER', 'Ana López', 'jwt-CARDHOLDER'),
+        ),
+      },
+    );
+    await tester.tap(find.text('Soy titular'));
+    await tester.pumpAndSettle();
+
+    // Pago con código apagado: no hay botón; el QR sigue.
+    expect(find.text('Pagar en caja'), findsNothing);
+    expect(find.text('Mostrar mi código QR'), findsOneWidget);
+
+    await tester.tap(find.text('Asistente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Asistente virtual'), findsOneWidget);
+    await tester.tap(find.text('¿Cuál es mi saldo?'));
+    await tester.pumpAndSettle();
+    expect(find.text(r'Tu saldo es $50.00.'), findsOneWidget);
+    expect(find.text('¿Cómo recargo?'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('módulos: administración apaga el asistente', (tester) async {
+    var off = <String>{};
+    Map<String, Object?>? sent;
+    final api = FakeApi({
+      'GET /health': health,
+      'GET /v1/admin/stats': (_) => (500, {}),
+      'GET /v1/admin/reconciliation': (_) => (500, {}),
+      'GET /v1/modules': (_) => (200, _modules(off)),
+      'PUT /v1/admin/modules/assistant': (r) {
+        sent = jsonDecode(r.body) as Map<String, Object?>;
+        off = {'assistant'};
+        return (200, (_modules(off)['items']! as List).first as Object);
+      },
+    });
+    await pumpApp(
+      tester,
+      api,
+      stored: {
+        'session.ADMIN': jsonEncode(
+          _storedSession('ADMIN', 'Administración Demo', 'jwt-ADMIN'),
+        ),
+      },
+    );
+    await tester.tap(find.text('Administración'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Módulos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('5 de 5 activos'), findsOneWidget);
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Asistente virtual'));
+    await tester.pumpAndSettle();
+
+    expect(sent, {'enabled': false});
+    expect(find.text('4 de 5 activos'), findsOneWidget);
+    expect(find.text('Asistente virtual: desactivado.'), findsOneWidget);
+  });
 }
+
+/// Lista de módulos como la devuelve `GET /v1/modules`, con [off] apagados.
+Map<String, Object?> _modules(Set<String> off) => {
+  'items': [
+    for (final m in AppModule.values)
+      {
+        'key': m.key,
+        'name': m.label,
+        'description': m.description,
+        'audience': 'CARDHOLDER',
+        'enabled': !off.contains(m.key),
+        'updatedAt': '2026-10-27T15:00:00Z',
+        'updatedByName': null,
+      },
+  ],
+};

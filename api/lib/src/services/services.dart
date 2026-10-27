@@ -3,10 +3,12 @@ import 'package:postgres/postgres.dart';
 import '../config.dart';
 import '../mailer.dart';
 import '../security.dart';
+import 'assistant_service.dart';
 import 'auth_service.dart';
 import 'card_service.dart';
 import 'demo_reset_service.dart';
 import 'ledger_service.dart';
+import 'module_service.dart';
 import 'replacement_service.dart';
 import 'terminal_service.dart';
 
@@ -24,6 +26,7 @@ class Services {
     final tokens = TokenService(config.jwtSecret, config.jwtTtl);
     final auth = AuthService(pool, config, hasher, tokens, mailer);
     final cards = CardService(pool, config, auth);
+    final modules = ModuleService(pool);
     return Services._(
       pool: pool,
       tokens: tokens,
@@ -36,6 +39,8 @@ class Services {
         faultHook: replacementFault,
       ),
       terminals: TerminalService(pool),
+      modules: modules,
+      assistant: AssistantService(config, cards, modules),
       outbox: switch (mailer) {
         final MailOutbox outbox => outbox,
         _ => null,
@@ -52,6 +57,8 @@ class Services {
     required this.ledger,
     required this.replacements,
     required this.terminals,
+    required this.modules,
+    required this.assistant,
     required this.outbox,
     required this.demoReset,
   });
@@ -76,6 +83,12 @@ class Services {
 
   /// Terminales.
   final TerminalService terminals;
+
+  /// Módulos que administración activa o desactiva.
+  final ModuleService modules;
+
+  /// Asistente virtual del titular.
+  final AssistantService assistant;
 
   /// Últimos correos enviados (buzón de la demo), si el mailer los guarda.
   final MailOutbox? outbox;
