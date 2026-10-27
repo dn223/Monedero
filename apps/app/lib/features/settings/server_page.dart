@@ -143,7 +143,7 @@ class _ServerPageState extends ConsumerState<ServerPage> {
               icon: Icons.check_circle_rounded,
               child: Text(
                 'Conectado (versión ${_ok!.version}'
-                '${_ok!.demoMode ? ', modo demo' : ''}). Guardado.',
+                '). Guardado.',
               ),
             ),
           ],

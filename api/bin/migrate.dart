@@ -41,10 +41,12 @@ Future<void> main(List<String> args) async {
           : '  [ok] Migraciones aplicadas: ${applied.join(', ')}',
     );
     if (seed) {
-      final seeded = await seedDemo(owner, config);
+      final seeded = await seedDatabase(owner, config);
       stdout.writeln(
         seeded
-            ? '  [ok] Datos de demostración sembrados.'
+            ? (config.sampleData
+                  ? '  [ok] Datos de ejemplo sembrados.'
+                  : '  [ok] Cuenta de administración creada (${config.adminEmail}).')
             : '  [ok] Ya había datos; no se sembró de nuevo.',
       );
     }

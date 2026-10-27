@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'card_number.dart';
 import 'card_signature.dart';
+import 'terminal_code.dart';
 
 /// Contenidos de los códigos QR que la app genera y escanea.
 ///
@@ -53,16 +54,18 @@ abstract final class QrPayloads {
   static String terminalLink(String terminalToken) =>
       jsonEncode({'type': terminalLinkType, 'terminalToken': terminalToken});
 
-  /// Lee la credencial de caja desde un QR de vínculo o desde la credencial
-  /// pegada tal cual (64 caracteres hexadecimales). Devuelve `null` si no es
-  /// ninguno de los dos.
+  /// Lee la credencial de caja desde un QR de vínculo, desde el código de
+  /// la caja ([TerminalCode], con o sin guiones) o desde una credencial
+  /// antigua de 64 caracteres hexadecimales. Devuelve `null` si no es
+  /// ninguno.
   static String? terminalToken(String raw) {
     final text = raw.trim();
     if (_token.hasMatch(text)) return text;
+    if (TerminalCode.normalize(text) case final code?) return code;
     final json = _decode(text);
     final token = json?['terminalToken'];
     if (json?['type'] != terminalLinkType || token is! String) return null;
-    return _token.hasMatch(token) ? token : null;
+    return _token.hasMatch(token) ? token : TerminalCode.normalize(token);
   }
 
   /// Normaliza la URL de un servidor escrita o escaneada: agrega `http://`

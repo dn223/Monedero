@@ -567,8 +567,8 @@ class _NameDialogState extends State<_NameDialog> {
   );
 }
 
-/// Credencial de la caja recién creada: se muestra **una sola vez** (en la
-/// base solo queda su SHA-256).
+/// Código de acceso de la caja recién creada: se muestra **una sola vez**
+/// (en la base solo queda su SHA-256).
 class _CredentialDialog extends StatelessWidget {
   const _CredentialDialog({required this.terminal});
 
@@ -577,6 +577,7 @@ class _CredentialDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final token = terminal['terminalToken']! as String;
+    final code = terminal['code'] as String? ?? token;
     final theme = Theme.of(context);
     return AlertDialog(
       title: Text('${terminal['name']} creada'),
@@ -587,8 +588,20 @@ class _CredentialDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'En el dispositivo de la caja, abre Caja y elige "Escanear QR '
-                'de la caja". Esta credencial no se vuelve a mostrar.',
+                'Entrega este código a la caja: en el dispositivo de la caja, '
+                'abre Caja y escríbelo (o escanea el QR). No se vuelve a '
+                'mostrar.',
+              ),
+              const SizedBox(height: 16),
+              SelectableText(
+                code,
+                style: AppText.money(
+                  theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  ),
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               QrBox(
@@ -602,12 +615,6 @@ class _CredentialDialog extends StatelessWidget {
                 '${Fmt.payCode(terminal['payCode']! as String)}',
                 style: theme.textTheme.titleSmall,
               ),
-              const SizedBox(height: 8),
-              SelectableText(
-                token,
-                style: AppText.money(theme.textTheme.bodySmall),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
         ),
@@ -615,7 +622,7 @@ class _CredentialDialog extends StatelessWidget {
       actions: [
         TextButton.icon(
           onPressed: () =>
-              copyToClipboard(context, token, message: 'Credencial copiada.'),
+              copyToClipboard(context, code, message: 'Código copiado.'),
           icon: const Icon(Icons.copy_rounded),
           label: const Text('Copiar'),
         ),

@@ -258,6 +258,10 @@ class AuthService {
     );
   }
 
+  /// Sesión del usuario de caja [staffId] (la caja entró con su código).
+  Future<Map<String, Object?>> cashierSession(String staffId, String name) =>
+      _session(Principal(id: staffId, role: Role.cashier), name);
+
   /// Solo modo demo: sesión del titular verificado con [email].
   Future<Map<String, Object?>> demoHolderSession(String email) async {
     final holder = await _holderByEmail(email);

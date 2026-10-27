@@ -227,4 +227,89 @@ void main() {
       }
     }
   });
+
+  group('Caja con código de acceso', () {
+    test(
+      'administración crea la caja y la caja entra solo con su código',
+      () async {
+        final (s1, created) = await h.call(
+          'POST',
+          '/v1/admin/terminals',
+          body: {'name': 'Caja 1'},
+          token: desk.admin,
+        );
+        expect(s1, 201);
+        final code = created['code']! as String;
+        expect(code, matches(RegExp(r'^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$')));
+
+        // Se acepta en minúsculas y sin guiones.
+        final (s2, login) = await h.call(
+          'POST',
+          '/v1/auth/terminals/login',
+          body: {'code': code.toLowerCase().replaceAll('-', ' ')},
+        );
+        expect(s2, 200, reason: '$login');
+        expect(login['role'], 'CASHIER');
+        expect(login['fullName'], 'Caja 1');
+        expect(login['payCode'], created['payCode']);
+        expect(login['terminalToken'], code.replaceAll('-', ''));
+
+        // Con esa sesión y su código cobra como cualquier caja.
+        final (cardId, creds, _) = await desk.newActiveCard('caja1@demo.local');
+        final (s3, receipt) = await h.call(
+          'POST',
+          '/v1/cards/top-ups',
+          body: {'card': creds, 'amountCents': 500},
+          token: login['accessToken']! as String,
+          terminal: login['terminalToken']! as String,
+          key: '1b6f0a2c-3d4e-4f50-8a9b-0c1d2e3f4a5b',
+        );
+        expect(s3, 201, reason: '$receipt');
+        final row = (await query(
+          h.owner,
+          'SELECT t.terminal_id, s.full_name FROM transactions t '
+          'JOIN staff_users s ON s.id = t.staff_user_id '
+          "WHERE t.card_id = @c:uuid AND t.type = 'TOP_UP'",
+          {'c': cardId},
+        )).single;
+        expect(row['terminal_id'], created['terminalId']);
+        expect(row['full_name'], 'Caja 1');
+
+        // Revocada: el código ya no entra ni la sesión se renueva.
+        final (s4, _) = await h.call(
+          'DELETE',
+          '/v1/admin/terminals/${created['terminalId']}',
+          token: desk.admin,
+        );
+        expect(s4, 200);
+        final (s5, b5) = await h.call(
+          'POST',
+          '/v1/auth/terminals/login',
+          body: {'code': code},
+        );
+        expect((s5, error(b5)['code']), (401, 'INVALID_CREDENTIALS'));
+        final (s6, _) = await h.call(
+          'POST',
+          '/v1/auth/refresh',
+          body: {'refreshToken': login['refreshToken']},
+        );
+        expect(s6, 401);
+      },
+    );
+
+    test('un código inventado no entra', () async {
+      for (final code in ['AAAA-BBBB-CCCC', 'no es un código', '']) {
+        final (status, body) = await h.call(
+          'POST',
+          '/v1/auth/terminals/login',
+          body: {'code': code},
+        );
+        expect(status, anyOf(400, 401), reason: code);
+        expect(
+          error(body)['code'],
+          anyOf('INVALID_CREDENTIALS', 'VALIDATION_FAILED'),
+        );
+      }
+    });
+  });
 }

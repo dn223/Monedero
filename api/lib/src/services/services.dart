@@ -38,7 +38,7 @@ class Services {
         cards,
         faultHook: replacementFault,
       ),
-      terminals: TerminalService(pool),
+      terminals: TerminalService(pool, hasher),
       modules: modules,
       assistant: AssistantService(config, cards, modules),
       outbox: switch (mailer) {

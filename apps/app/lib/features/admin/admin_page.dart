@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monedero_core/monedero_core.dart';
 
-import '../../core/api/api_client.dart';
-import '../../core/providers.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/card_widgets.dart';
@@ -37,7 +35,6 @@ class AdminPage extends ConsumerWidget {
             'revisa que la contabilidad cuadre.',
         loginPath: '/v1/auth/staff/login',
         sessionProvider: adminSessionProvider,
-        demoAccounts: DemoAccounts.admin,
       );
     }
     return const AdminShell();
@@ -125,42 +122,11 @@ class DashboardSection extends ConsumerWidget {
   /// Crea la sección.
   const DashboardSection({super.key});
 
-  Future<void> _resetDemo(BuildContext context, WidgetRef ref) async {
-    final ok = await confirm(
-      context,
-      title: 'Reiniciar la demo',
-      message:
-          'Se borran todas las tarjetas, titulares, cajas y movimientos, y se '
-          'vuelven a sembrar los datos de demostración. Todas las sesiones se '
-          'cierran.',
-      action: 'Reiniciar',
-      destructive: true,
-    );
-    if (!ok || !context.mounted) return;
-    try {
-      await ref
-          .read(adminSessionProvider.notifier)
-          .run((api, token) => api.post('/v1/admin/demo/reset', token: token));
-      // Los usuarios se volvieron a crear: las sesiones anteriores no sirven.
-      for (final session in [
-        holderSessionProvider,
-        cashierSessionProvider,
-        adminSessionProvider,
-      ]) {
-        await ref.read(session.notifier).signOut();
-      }
-      if (context.mounted) showMessage(context, 'Demo reiniciada.');
-    } on ApiException catch (error) {
-      if (context.mounted) showMessage(context, friendlyError(error));
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final stats = ref.watch(adminStatsProvider);
     final rec = ref.watch(reconciliationProvider);
-    final demo = ref.watch(demoModeProvider);
     void refresh() => ref
       ..invalidate(adminStatsProvider)
       ..invalidate(reconciliationProvider);
@@ -177,12 +143,6 @@ class DashboardSection extends ConsumerWidget {
               onPressed: refresh,
               icon: const Icon(Icons.refresh_rounded),
             ),
-            if (demo)
-              TextButton.icon(
-                onPressed: () => _resetDemo(context, ref),
-                icon: const Icon(Icons.restart_alt_rounded),
-                label: const Text('Reiniciar demo'),
-              ),
           ],
         ),
         const SizedBox(height: 12),

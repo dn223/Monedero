@@ -24,6 +24,8 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 - Presentación de entrada (`docs/presentacion-intro.pdf`) con una diapositiva nueva de módulos y asistente; ahora son 6.
 - Pruebas: 3 de `core`, 7 unitarias del asistente, 6 de integración de módulos y 2 de widgets. ADR 0014 y documentación.
 
+- Sistema sin datos de prueba (ADR 0015): solo la cuenta de administración (contraseña en `.env`), caja que entra con el código que genera administración (migración `0005`), titulares que se registran, y sin la palabra "demo" en la app. Asistente apagado para la exposición.
+
 **Pendiente:**
 - El ingeniero quiere el proyecto **desplegado con una URL**: hoy es el link temporal de `tool/share.dart`; uno permanente necesita cuenta y aprobación del equipo.
 - Confirmar con el ingeniero cuáles son los "requerimientos adicionales" que pidió.

@@ -18,3 +18,4 @@ Un ADR por decisión técnica, con el formato de [0000-plantilla.md](0000-planti
 | [0012](0012-reinicio-de-la-demo-por-api.md) | Reinicio de la demo por API con el dueño del esquema, solo en modo demo | Aceptado |
 | [0013](0013-firma-del-apk-fuera-del-repositorio.md) | Firma del APK release con un keystore fuera del repositorio | Aceptado |
 | [0014](0014-modulos-activables-y-asistente.md) | Módulos activables desde administración y asistente virtual por reglas | Aceptado |
+| [0015](0015-caja-con-codigo-y-sin-datos-de-ejemplo.md) | La caja entra con su código y la base empieza solo con administración | Aceptado |

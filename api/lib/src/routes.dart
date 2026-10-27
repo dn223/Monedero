@@ -16,6 +16,16 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
   const cashier = {Role.cashier, Role.admin};
   const admin = {Role.admin};
 
+  // Sesiones sin contraseña: solo con los datos de ejemplo sembrados.
+  void requireSampleData() {
+    if (!config.demoMode || !config.sampleData) {
+      throw const ApiException(
+        ApiErrorCode.demoModeDisabled,
+        'Las sesiones de ejemplo no están disponibles.',
+      );
+    }
+  }
+
   void requireDemo() {
     if (!config.demoMode) {
       throw const ApiException(
@@ -65,6 +75,18 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         await s.auth.resendVerificationCode(requireString(b, 'email')),
         status: 202,
       );
+    })
+    // La caja entra solo con el código que le dio administración.
+    ..post('/v1/auth/terminals/login', (Request r) async {
+      final b = await readJson(r);
+      final t = await s.terminals.login(requireString(b, 'code'));
+      return jsonResponse({
+        ...await s.auth.cashierSession(t.cashierId, t.name),
+        'terminalToken': t.terminalToken,
+        'terminalId': t.terminalId,
+        'name': t.name,
+        'payCode': t.payCode,
+      });
     })
     ..post('/v1/auth/staff/login', (Request r) async {
       final b = await readJson(r);
@@ -337,14 +359,14 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     // Sesiones sin contraseña SOLO en modo demo (exposición). Con
     // DEMO_MODE=false responden 403.
     ..post('/v1/demo/cashier-session', (Request r) async {
-      requireDemo();
+      requireSampleData();
       return jsonResponse({
         ...await s.auth.demoStaffSession(Role.cashier),
         ...await s.terminals.demoTerminal(),
       });
     })
     ..post('/v1/demo/holder-session', (Request r) async {
-      requireDemo();
+      requireSampleData();
       final b = await readJson(r);
       return jsonResponse(
         await s.auth.demoHolderSession(requireString(b, 'email')),

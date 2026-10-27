@@ -17,11 +17,10 @@ import '../../core/widgets/feedback.dart';
 import '../../core/widgets/layout.dart';
 import '../../core/widgets/qr.dart';
 import '../../core/widgets/receipt.dart';
-import '../auth/login_page.dart';
 import 'cashier_providers.dart';
 
-/// Espacio de la caja: inicio de sesión, vínculo de la caja y, con ambos,
-/// el mostrador para leer tarjetas, cobrar y recargar.
+/// Espacio de la caja: se abre con el código que entregó administración y,
+/// abierta, muestra el mostrador para leer tarjetas, cobrar y recargar.
 class CashierPage extends ConsumerWidget {
   /// Crea la pantalla.
   const CashierPage({super.key});
@@ -32,54 +31,39 @@ class CashierPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(cashierSessionProvider);
-    if (session == null) {
-      return LoginPage(
-        title: 'Caja',
-        icon: Icons.point_of_sale_rounded,
-        heading: 'Abrir caja',
-        message:
-            'Inicia sesión con tu cuenta de cajero para cobrar y recargar.',
-        loginPath: '/v1/auth/staff/login',
-        sessionProvider: cashierSessionProvider,
-        demoAccounts: DemoAccounts.cashier,
-      );
-    }
     final terminal = ref.watch(terminalProvider);
-    if (terminal == null) return TerminalLinkPage(session: session);
+    if (session == null || terminal == null) return const CashierCodePage();
     return CashierDesk(session: session, terminal: terminal);
   }
 }
 
-/// Vincula este dispositivo con una caja autorizada por administración.
-class TerminalLinkPage extends ConsumerStatefulWidget {
+/// Abre la caja con su código de acceso (o el QR que lo contiene).
+class CashierCodePage extends ConsumerStatefulWidget {
   /// Crea la pantalla.
-  const TerminalLinkPage({required this.session, super.key});
-
-  /// Sesión del cajero.
-  final Session session;
+  const CashierCodePage({super.key});
 
   @override
-  ConsumerState<TerminalLinkPage> createState() => _TerminalLinkPageState();
+  ConsumerState<CashierCodePage> createState() => _CashierCodePageState();
 }
 
-class _TerminalLinkPageState extends ConsumerState<TerminalLinkPage> {
-  final _token = TextEditingController();
+class _CashierCodePageState extends ConsumerState<CashierCodePage> {
+  final _code = TextEditingController();
   bool _busy = false;
   Object? _error;
 
   @override
   void dispose() {
-    _token.dispose();
+    _code.dispose();
     super.dispose();
   }
 
-  Future<void> _guard(Future<void> Function() action) async {
+  Future<void> _open(String raw) async {
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await action();
+      await ref.read(terminalProvider.notifier).open(raw);
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error);
     } finally {
@@ -87,89 +71,58 @@ class _TerminalLinkPageState extends ConsumerState<TerminalLinkPage> {
     }
   }
 
-  Future<void> _linkWith(String raw) async {
-    final token = QrPayloads.terminalToken(raw);
-    if (token == null) {
-      setState(
-        () => _error = const ApiException(
-          'Eso no es una credencial de caja. Usa el QR o el texto que muestra '
-          'administración al crear la caja.',
-        ),
-      );
-      return;
-    }
-    await _guard(() => ref.read(terminalProvider.notifier).link(token));
-  }
-
   Future<void> _scan() async {
     final raw = await scanQr(context, title: 'Escanea el QR de la caja');
-    if (raw != null) await _linkWith(raw);
+    if (raw != null) await _open(raw);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final demo = ref.watch(demoModeProvider);
     return RoleScaffold(
       title: 'Caja',
       icon: Icons.point_of_sale_rounded,
       maxWidth: 520,
-      actions: [SignOutButton(cashierSessionProvider)],
       body: PageList(
         children: [
           const SizedBox(height: 8),
-          Text('Vincula esta caja', style: theme.textTheme.headlineSmall),
+          Text('Abrir caja', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(
-            'Cada dispositivo de caja necesita su credencial. Administración '
-            'la genera en Cajas, con el botón "Nueva caja", y la muestra una '
-            'sola vez.',
+            'Escribe el código de la caja. Administración lo genera en Cajas, '
+            'con el botón "Nueva caja".',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 24),
-          if (demo) ...[
-            FilledButton.icon(
-              onPressed: _busy
-                  ? null
-                  : () => _guard(
-                      () => ref.read(terminalProvider.notifier).createDemo(),
-                    ),
-              icon: const Icon(Icons.bolt_rounded),
-              label: const Text('Crear una caja de demostración'),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Modo demo: crea una caja nueva solo para este dispositivo.',
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-          ],
-          OutlinedButton.icon(
-            onPressed: _busy ? null : _scan,
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            label: const Text('Escanear QR de la caja'),
-          ),
-          const SizedBox(height: 16),
           TextField(
-            controller: _token,
+            controller: _code,
+            textCapitalization: TextCapitalization.characters,
+            autocorrect: false,
+            style: theme.textTheme.titleLarge?.copyWith(letterSpacing: 2),
             decoration: const InputDecoration(
-              labelText: 'O pega la credencial',
+              labelText: 'Código de la caja',
+              hintText: 'K7M4-Q2XP-HT9W',
               prefixIcon: Icon(Icons.key_rounded),
             ),
-            onSubmitted: _linkWith,
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: _busy ? null : () => _linkWith(_token.text),
-            child: const Text('Vincular'),
+            onSubmitted: _busy ? null : _open,
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             ErrorPanel(_error!),
           ],
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: _busy ? null : () => _open(_code.text),
+            child: Text(_busy ? 'Abriendo…' : 'Abrir caja'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _scan,
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            label: const Text('Escanear QR de la caja'),
+          ),
         ],
       ),
     );
@@ -198,7 +151,7 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
   final _pin = TextEditingController();
   Timer? _timer;
 
-  SimulatedReadMode _mode = SimulatedReadMode.camera;
+  SimulatedReadMode _mode = SimulatedReadMode.demoList;
   _Operation _operation = _Operation.debit;
   int? _topUpCents = 1000;
 
@@ -367,36 +320,32 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
   @override
   Widget build(BuildContext context) {
     final demo = ref.watch(demoModeProvider);
+    // Sin lector NFC todavía: primero la lista y el número, luego la cámara.
     final modes = [
-      SimulatedReadMode.camera,
       if (demo) SimulatedReadMode.demoList,
       SimulatedReadMode.manual,
+      SimulatedReadMode.camera,
     ];
     if (!modes.contains(_mode)) _mode = modes.first;
     return RoleScaffold(
       title: widget.terminal.name,
       icon: Icons.point_of_sale_rounded,
       actions: [
-        PopupMenuButton<String>(
-          tooltip: 'Opciones de la caja',
-          onSelected: (value) async {
-            if (value == 'unlink') {
-              final ok = await confirm(
-                context,
-                title: 'Desvincular caja',
-                message:
-                    'Este dispositivo dejará de operar como '
-                    '${widget.terminal.name} hasta vincularlo de nuevo.',
-                action: 'Desvincular',
-              );
-              if (ok) ref.read(terminalProvider.notifier).unlink();
-            }
+        IconButton(
+          tooltip: 'Cerrar caja',
+          icon: const Icon(Icons.logout_rounded),
+          onPressed: () async {
+            final ok = await confirm(
+              context,
+              title: 'Cerrar caja',
+              message:
+                  'Para volver a abrir ${widget.terminal.name} hará falta su '
+                  'código.',
+              action: 'Cerrar caja',
+            );
+            if (ok) await ref.read(terminalProvider.notifier).close();
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'unlink', child: Text('Desvincular caja')),
-          ],
         ),
-        SignOutButton(cashierSessionProvider),
       ],
       body: TwoColumns(
         start: [
@@ -428,14 +377,14 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
               icon: const Icon(Icons.contactless_outlined),
               label: Text(switch (_mode) {
                 SimulatedReadMode.camera => 'Escanear la tarjeta del titular',
-                SimulatedReadMode.demoList => 'Elegir tarjeta de demostración',
+                SimulatedReadMode.demoList => 'Elegir tarjeta de la lista',
                 SimulatedReadMode.manual => 'Escribir número de tarjeta',
               }),
             ),
             const SizedBox(height: 8),
             Text(
-              'Sin tarjetas físicas todavía: la lectura NFC se simula con el '
-              'QR que muestra la app del titular.',
+              'Las tarjetas físicas con NFC llegan en la Fase 7; mientras '
+              'tanto se eligen de la lista o por su número.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ] else

@@ -58,17 +58,17 @@ En Android: APK con `cd apps/app && flutter build apk --release` ([docs/android.
 dart run tool/demo.dart --pausa
 ```
 
-## Credenciales de demostración
+## Cuentas
 
-Las crea `dart run tool/up.dart` (o `dart run tool/seed.dart`). En modo demo la app las ofrece en cada pantalla de inicio de sesión ("Entrar como…").
+Al iniciar, la base tiene **solo la cuenta de administración** ([ADR 0015](docs/adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)):
 
-| Rol | Usuario | Contraseña | PIN |
-|---|---|---|---|
-| Administrador | `admin@monedero.local` | `Admin1234` | — |
-| Cajero | `cajero@monedero.local` | `Cajero1234` | — |
-| Titular | `ana@demo.local` / `bruno@demo.local` | `Titular1234` | `1234` |
+| Rol | Cómo se entra |
+|---|---|
+| Administración | `admin@monedero.local` (`ADMIN_EMAIL`) con la contraseña `ADMIN_PASSWORD` que `tool/up.dart` genera en `.env` |
+| Caja | Administración → Cajas → **Nueva caja** entrega un código (`K7M4-Q2XP-HT9W`); la caja se abre solo con ese código |
+| Titular | Se registra en la app; el código de verificación aparece en pantalla y en "Correos recibidos" |
 
-Solo para la demo local; nunca se usan en producción.
+Con `SAMPLE_DATA=true` en `.env` (antes de sembrar) se crean además los ejemplos Ana y Bruno (`Titular1234`, PIN `1234`) y un cajero.
 
 ## Estado
 

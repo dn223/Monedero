@@ -107,10 +107,13 @@ Future<void> main(List<String> args) async {
     ..writeln('      $url')
     ..writeln()
     ..writeln(_qrText(url))
-    ..writeln('  Cuentas demo (también se muestran en la app):')
-    ..writeln('    Titular ....... ana@demo.local / Titular1234  (PIN 1234)')
-    ..writeln('    Caja .......... cajero@monedero.local / Cajero1234')
-    ..writeln('    Administración  admin@monedero.local / Admin1234')
+    ..writeln('  Cuentas:')
+    ..writeln(
+      '    Administración  ${env['ADMIN_EMAIL'] ?? 'admin@monedero.local'} '
+      '(contraseña: ADMIN_PASSWORD en .env)',
+    )
+    ..writeln('    Caja .......... el código que genera Administración > Cajas')
+    ..writeln('    Titulares ..... se registran en la app')
     ..writeln()
     ..writeln(
       '  APK: en el inicio toca el ícono de servidor y escanea este QR.',

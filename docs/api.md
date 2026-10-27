@@ -72,7 +72,8 @@ La app decide por `code`, nunca por `message`.
 | `POST` | `/v1/auth/cardholders/verify-email` | público | `{email, code}` |
 | `POST` | `/v1/auth/cardholders/login` | público | `{email, password}` → JWT |
 | `POST` | `/v1/auth/cardholders/resend-code` | público | `{email}`; reenvía el código si la cuenta no está verificada (responde igual si no existe) |
-| `POST` | `/v1/auth/staff/login` | público | Cajero/administrador → JWT |
+| `POST` | `/v1/auth/terminals/login` | público | `{code}` (código de la caja, con o sin guiones) → sesión de la caja + `terminalToken`, `terminalId`, `name`, `payCode` ([ADR 0015](adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)) |
+| `POST` | `/v1/auth/staff/login` | público | Administración (o cajero de los datos de ejemplo) → JWT |
 | `POST` | `/v1/auth/refresh` | público | `{refreshToken}` → sesión nueva (el token usado deja de servir) |
 | `POST` | `/v1/auth/logout` | público | `{refreshToken}` → revocado |
 | `GET` | `/v1/me/cards` | titular | Tarjetas con saldo y `credentials` (contenido del QR; no viajan si el módulo `card_qr` está apagado) |
@@ -98,13 +99,13 @@ La app decide por `code`, nunca por `message`.
 | `GET` | `/v1/admin/reconciliation` | admin | Saldo vs. suma de movimientos |
 | `GET` | `/v1/admin/stats` | admin | Tablero: tarjetas por estado, saldo en circulación y recargas/cobros por día (14 días) |
 | `POST` | `/v1/admin/demo/reset` | admin (modo demo) | Borra todo y siembra de nuevo ([ADR 0012](adr/0012-reinicio-de-la-demo-por-api.md)) |
-| `GET` / `POST` | `/v1/admin/terminals` | admin | Listar / registrar (la credencial se muestra una sola vez) |
-| `DELETE` | `/v1/admin/terminals/{id}` | admin | Revocar |
+| `GET` / `POST` | `/v1/admin/terminals` | admin | Listar / registrar: crea la caja y su usuario, y devuelve su `code` (`K7M4-Q2XP-HT9W`) una sola vez |
+| `DELETE` | `/v1/admin/terminals/{id}` | admin | Revocar (desactiva también el usuario de la caja) |
 | `GET` | `/v1/demo/cards` | cajero (modo demo) | Tarjetas activas para elegir en caja |
 | `POST` | `/v1/demo/terminals` | cajero (modo demo) | Crea "Caja demo N" para el dispositivo (credencial una sola vez) |
 | `GET` | `/v1/demo/inbox` | titular (modo demo) | Correos que recibió el titular (códigos y avisos), guardados en memoria |
-| `POST` | `/v1/demo/cashier-session` | público (modo demo) | Sesión de cajero y credencial de "Caja Demo" sin contraseña |
-| `POST` | `/v1/demo/holder-session` | público (modo demo) | `{email}` → sesión del titular sin contraseña |
+| `POST` | `/v1/demo/cashier-session` | público (modo demo + `SAMPLE_DATA=true`) | Sesión de cajero y credencial de "Caja Demo" sin contraseña |
+| `POST` | `/v1/demo/holder-session` | público (modo demo + `SAMPLE_DATA=true`) | `{email}` → sesión del titular sin contraseña |
 | `GET` | `/v1/demo/terminal-activity/{payCode}` | cajero (modo demo) | Movimientos de la caja con ese código |
 
 ### Módulos

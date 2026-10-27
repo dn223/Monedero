@@ -11,28 +11,31 @@
 3. Para empezar con datos limpios: **Administración → Resumen → Reiniciar demo** (o `dart run tool/reset_demo.dart`).
 4. Abrir tres pestañas del mismo navegador: `…/#/titular`, `…/#/caja` y `…/#/admin`. Cada rol guarda su propia sesión, así que las tres conviven.
 
-## Usuarios de prueba
+## Cuentas
 
-En modo demo la app los muestra en cada pantalla de inicio de sesión ("Entrar como…").
+Al iniciar, la base tiene **solo la cuenta de administración** ([ADR 0015](adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)):
 
-| Rol | Usuario | Contraseña | PIN |
-|---|---|---|---|
-| Administración | `admin@monedero.local` | `Admin1234` | — |
-| Caja | `cajero@monedero.local` | `Cajero1234` | — |
-| Titular (Ana, $50.00) | `ana@demo.local` | `Titular1234` | `1234` |
-| Titular (Bruno, $15.00) | `bruno@demo.local` | `Titular1234` | `1234` |
+| Rol | Cómo se entra |
+|---|---|
+| Administración | `admin@monedero.local` (`ADMIN_EMAIL`) con la contraseña `ADMIN_PASSWORD` que `tool/up.dart` genera en `.env` |
+| Caja | Administración → Cajas → **Nueva caja** entrega un código (`K7M4-Q2XP-HT9W`); la caja se abre solo con ese código |
+| Titular | Se registra en la app; el código de verificación aparece en pantalla y en "Correos recibidos" |
+
+Con `SAMPLE_DATA=true` en `.env` (antes de sembrar) se crean además los ejemplos Ana y Bruno (`Titular1234`, PIN `1234`) y un cajero.
+
+Antes de exponer: Administración → Cajas → **Nueva caja** y anota su código.
 
 ## Guion
 
 | Min | Paso | Dónde, en la app | Resultado esperado |
 |---|---|---|---|
 | 0:00 | Contexto | Pantalla inicial: tres roles y servidor conectado | — |
-| 1:00 | 1. Registrar un titular | Titular → "¿Aún no tienes cuenta? Créala". El código del correo aparece en pantalla (modo demo) | Cuenta verificada y sesión abierta; "Aún no tienes tarjeta" |
+| 1:00 | 1. Registrar un titular | Titular → "¿Aún no tienes cuenta? Créala". El código del correo aparece en pantalla | Cuenta verificada y sesión abierta; "Aún no tienes tarjeta" |
 | 2:00 | 2. Emitir la tarjeta | Administración → Titulares → **Emitir tarjeta** → **Entregar ahora** | Tarjeta `ACTIVE`; en la pestaña del titular aparece sola |
-| 3:00 | 3. Recargar $20 | Caja → Crear caja de demostración → Lista demo (o escanear el QR del titular) → Recargar → $20.00 | Ticket "Recarga aprobada", saldo $20.00; el titular ve el movimiento y el correo |
+| 3:00 | 3. Recargar $20 | Caja → escribir el código de la caja → **Elegir tarjeta de la lista** (o escribir el número) → Recargar → $20.00 | Ticket "Recarga aprobada", saldo $20.00; el titular ve el movimiento y el correo |
 | 3:30 | 4. Cobrar $7.35 | Caja → Cobrar $7.35 (o el titular paga con **Pagar en caja** y el código de la caja) | Ticket "Cobro aprobado", saldo $12.65 |
 | 4:00 | 5. Sobregiro de $15.00 | Caja → Cobrar $15.00 | "Saldo insuficiente: la tarjeta tiene $12.65"; saldo intacto |
-| 4:30 | Extra: PIN | Ana: cobrar $30.00 → la caja pide el PIN (1234) | Aprobado solo con el PIN correcto |
+| 4:30 | Extra: PIN | Recargar $30 y cobrar $28.00 → la caja pide el PIN del titular | Aprobado solo con el PIN correcto |
 | 5:30 | 6. Reportar la pérdida | Titular → Reportar pérdida → Enviar código → Bloquear tarjeta | Tarjeta "Bloqueada"; la caja recibe "La tarjeta está bloqueada" |
 | 6:30 | 7. Reponer la tarjeta | Administración → Tarjetas → **Reponer** | Tarjeta nueva activa con el mismo saldo; la anterior "Repuesta" |
 | 7:00 | 8. Conciliación | Administración → Resumen | "Todo cuadra" y el gráfico de recargas y cobros |

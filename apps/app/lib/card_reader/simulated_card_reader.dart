@@ -10,7 +10,7 @@ enum SimulatedReadMode {
   camera('Escanear QR', Icons.qr_code_scanner_rounded),
 
   /// Elegir de la lista de tarjetas de demostración (solo modo demo).
-  demoList('Lista demo', Icons.list_alt_rounded),
+  demoList('Lista', Icons.list_alt_rounded),
 
   /// Escribir el número (en modo demo) o pegar el contenido del QR.
   manual('Número', Icons.keyboard_alt_outlined);
@@ -77,8 +77,7 @@ class SimulatedCardReader implements CardReader {
         );
         if (match.isEmpty) {
           throw const CardReadException(
-            'No hay una tarjeta activa de demostración con ese número. Fuera '
-            'del modo demo, escanea el QR.',
+            'No hay una tarjeta activa con ese número.',
           );
         }
         return CardCredentials.fromJson(
@@ -94,8 +93,8 @@ class SimulatedCardReader implements CardReader {
     if (!context.mounted) return null;
     if (cards.isEmpty) {
       throw const CardReadException(
-        'No hay tarjetas activas de demostración (o el modo demo está '
-        'apagado).',
+        'Todavía no hay tarjetas activas. Administración las emite y '
+        'entrega.',
       );
     }
     final picked = await showModalBottomSheet<Map<String, Object?>>(
@@ -106,7 +105,7 @@ class SimulatedCardReader implements CardReader {
           shrinkWrap: true,
           children: [
             const ListTile(
-              title: Text('Tarjetas de demostración'),
+              title: Text('Tarjetas activas'),
               subtitle: Text('Simula acercar una de estas tarjetas.'),
             ),
             for (final c in cards)
@@ -157,7 +156,7 @@ class _ManualDialogState extends State<_ManualDialog> {
         onSubmitted: (value) => Navigator.of(context).pop(value),
         decoration: const InputDecoration(
           labelText: 'Número de 16 dígitos o contenido del QR',
-          helperText: 'Con solo el número funciona en modo demo.',
+          helperText: 'Los 16 dígitos de la tarjeta.',
           helperMaxLines: 2,
         ),
       ),

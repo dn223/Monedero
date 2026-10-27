@@ -37,19 +37,19 @@ Future<void> main(List<String> args) async {
   heading('Preparación');
   final admin = await client.login(
     '/v1/auth/staff/login',
-    'admin@monedero.local',
-    'Admin1234',
-  );
-  final cashier = await client.login(
-    '/v1/auth/staff/login',
-    'cajero@monedero.local',
-    'Cajero1234',
+    env['ADMIN_EMAIL'] ?? 'admin@monedero.local',
+    env['ADMIN_PASSWORD'] ?? '',
   );
   final terminal = await client.post('/v1/admin/terminals', {
-    'name': 'Caja demo ${DateTime.now().toIso8601String()}',
+    'name': 'Caja ${DateTime.now().toIso8601String()}',
   }, token: admin);
-  final terminalToken = terminal.body['terminalToken']! as String;
-  ok('Administración y cajero autenticados; terminal registrado.');
+  // La caja entra solo con el código que le da administración.
+  final opened = await client.post('/v1/auth/terminals/login', {
+    'code': terminal.body['code'],
+  });
+  final cashier = opened.body['accessToken']! as String;
+  final terminalToken = opened.body['terminalToken']! as String;
+  ok('Administración autenticada; caja creada y abierta con su código.');
 
   await step('Registrar un titular');
   await client.post('/v1/auth/cardholders/register', {

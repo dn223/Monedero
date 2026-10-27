@@ -45,7 +45,8 @@ String friendlyError(Object error) {
       'Demasiadas solicitudes seguidas. Espera un minuto e intenta de nuevo.',
     ApiErrorCode.forbidden => 'Tu cuenta no tiene permiso para esto.',
     ApiErrorCode.unauthorized => 'Tu sesión venció. Inicia sesión de nuevo.',
-    ApiErrorCode.demoModeDisabled => 'El modo demo está desactivado.',
+    ApiErrorCode.demoModeDisabled =>
+      'Esta función no está disponible en este servidor.',
     ApiErrorCode.moduleDisabled =>
       'Esta función está desactivada por administración en este momento.',
     _ => error.message,
@@ -155,7 +156,7 @@ class DemoCodeBanner extends StatelessWidget {
     child: Text.rich(
       TextSpan(
         children: [
-          const TextSpan(text: 'Modo demo: el código enviado al correo es '),
+          const TextSpan(text: 'Código enviado a tu correo: '),
           TextSpan(
             text: code,
             style: const TextStyle(

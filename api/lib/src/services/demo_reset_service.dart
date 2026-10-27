@@ -51,7 +51,7 @@ class DemoResetService {
         config.database.password,
       );
       await migrator.migrate();
-      await seedDemo(owner, config);
+      await seedDatabase(owner, config);
     } finally {
       await owner.close();
     }

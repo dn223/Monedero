@@ -65,6 +65,7 @@ class Harness {
       jwtSecret: 'secreto-de-prueba-con-al-menos-32-caracteres',
       cardMasterKey: 'llave-maestra-de-prueba-de-32-caracteres!!',
       passwordHashRounds: 4,
+      sampleData: true,
     );
     await seedDemo(owner, config);
     final pool = openPool(

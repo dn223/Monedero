@@ -39,7 +39,6 @@ class HolderPage extends ConsumerWidget {
             'tarjeta.',
         loginPath: '/v1/auth/cardholders/login',
         sessionProvider: holderSessionProvider,
-        demoAccounts: DemoAccounts.holders,
         footer: ref.watch(moduleOnProvider(AppModule.selfRegistration))
             ? Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -55,7 +54,7 @@ class HolderPage extends ConsumerWidget {
   }
 }
 
-/// Inicio del titular: tarjeta, acciones, movimientos y correos (demo).
+/// Inicio del titular: tarjeta, acciones, movimientos y correos recibidos.
 ///
 /// Se actualiza sola cada 5 segundos, así el saldo cambia en cuanto la
 /// caja cobra o recarga.
@@ -294,7 +293,7 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
                 ),
               ),
             ),
-          if (demo) const _DemoInbox(),
+          if (demo) const _Inbox(),
         ],
       ),
     );
@@ -317,9 +316,9 @@ class _CardPlaceholder extends StatelessWidget {
   );
 }
 
-/// Buzón de la demo: los correos que en producción llegarían al titular.
-class _DemoInbox extends ConsumerWidget {
-  const _DemoInbox();
+/// Correos que recibió el titular (códigos y avisos de movimientos).
+class _Inbox extends ConsumerWidget {
+  const _Inbox();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -331,8 +330,8 @@ class _DemoInbox extends ConsumerWidget {
         const InfoPanel(
           icon: Icons.mark_email_unread_outlined,
           child: Text(
-            'Modo demo: aquí ves los correos que la app te envía (códigos y '
-            'avisos de cada movimiento).',
+            'Aquí ves los correos que la app te envía: códigos y avisos de '
+            'cada movimiento.',
           ),
         ),
         const SizedBox(height: 8),

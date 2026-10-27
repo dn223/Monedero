@@ -84,13 +84,34 @@ class TerminalNotifier extends Notifier<TerminalLink?> {
     );
   }
 
-  /// Solo modo demo: crea una caja "Caja demo N" para este dispositivo y
-  /// la vincula.
-  Future<void> createDemo() async {
-    final created = await ref
-        .read(cashierSessionProvider.notifier)
-        .run((api, jwt) => api.post('/v1/demo/terminals', token: jwt));
-    await link(created['terminalToken']! as String);
+  /// Abre la caja con el código que entregó administración (escrito o
+  /// leído del QR): la API devuelve la sesión de la caja y sus datos.
+  Future<void> open(String raw) async {
+    final code = QrPayloads.terminalToken(raw);
+    if (code == null) {
+      throw const ApiException(
+        'Ese no es un código de caja. Tiene 12 letras y números, por ejemplo '
+        'K7M4-Q2XP-HT9W.',
+      );
+    }
+    final body = await ref
+        .read(apiClientProvider)
+        .post('/v1/auth/terminals/login', body: {'code': code});
+    ref.read(cashierSessionProvider.notifier).signIn(body);
+    _save(
+      TerminalLink(
+        token: body['terminalToken']! as String,
+        terminalId: body['terminalId']! as String,
+        name: body['name']! as String,
+        payCode: body['payCode'] as String?,
+      ),
+    );
+  }
+
+  /// Cierra la caja en este dispositivo: sesión y código.
+  Future<void> close() async {
+    _save(null);
+    await ref.read(cashierSessionProvider.notifier).signOut();
   }
 
   /// Desvincula la caja de este dispositivo.
@@ -149,8 +170,8 @@ class CashierApi {
     }
   }
 
-  /// Tarjetas activas de demostración con sus credenciales (solo modo
-  /// demo; fuera de él, lista vacía).
+  /// Tarjetas activas con sus credenciales, para elegir en caja mientras no
+  /// hay lector NFC (la API solo las entrega con `DEMO_MODE=true`).
   Future<List<Map<String, Object?>>> demoCards() async {
     if (!_ref.read(demoModeProvider)) return const [];
     final body = await _ref

@@ -7,43 +7,10 @@ import '../../core/session/session.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/layout.dart';
 
-/// Cuenta de demostración sembrada por `tool/seed.dart` (también en
-/// README y docs/demo.md). Solo se ofrece cuando la API confirma que el
-/// modo demo está activo.
-typedef DemoAccount = ({String label, String email, String password});
-
-/// Cuentas de demostración por rol.
-abstract final class DemoAccounts {
-  /// Titulares con tarjeta activa (PIN 1234).
-  static const holders = <DemoAccount>[
-    (label: 'Ana López', email: 'ana@demo.local', password: 'Titular1234'),
-    (label: 'Bruno Pérez', email: 'bruno@demo.local', password: 'Titular1234'),
-  ];
-
-  /// Cajero.
-  static const cashier = <DemoAccount>[
-    (
-      label: 'Cajero demo',
-      email: 'cajero@monedero.local',
-      password: 'Cajero1234',
-    ),
-  ];
-
-  /// Administración.
-  static const admin = <DemoAccount>[
-    (
-      label: 'Administración demo',
-      email: 'admin@monedero.local',
-      password: 'Admin1234',
-    ),
-  ];
-}
-
 /// Pantalla de inicio de sesión de un rol.
 ///
 /// Envía correo y contraseña a [loginPath] y guarda la sesión en
-/// [sessionProvider]. En modo demo muestra las cuentas sembradas para
-/// entrar con un toque.
+/// [sessionProvider].
 class LoginPage extends ConsumerStatefulWidget {
   /// Crea la pantalla.
   const LoginPage({
@@ -53,7 +20,6 @@ class LoginPage extends ConsumerStatefulWidget {
     required this.message,
     required this.loginPath,
     required this.sessionProvider,
-    required this.demoAccounts,
     this.footer,
     super.key,
   });
@@ -75,9 +41,6 @@ class LoginPage extends ConsumerStatefulWidget {
 
   /// Dónde se guarda la sesión.
   final NotifierProvider<SessionNotifier, Session?> sessionProvider;
-
-  /// Cuentas de demostración para este rol.
-  final List<DemoAccount> demoAccounts;
 
   /// Contenido opcional bajo el botón (por ejemplo, "Crear cuenta").
   final Widget? footer;
@@ -126,16 +89,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  void _useDemo(DemoAccount account) {
-    _email.text = account.email;
-    _password.text = account.password;
-    _submit();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final demo = ref.watch(demoModeProvider);
     return RoleScaffold(
       title: widget.title,
       icon: widget.icon,
@@ -193,22 +149,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: Text(_busy ? 'Entrando…' : 'Entrar'),
             ),
             ?widget.footer,
-            if (demo && widget.demoAccounts.isNotEmpty) ...[
-              const SectionTitle('Cuentas de demostración'),
-              for (final account in widget.demoAccounts)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.bolt_rounded),
-                      title: Text('Entrar como ${account.label}'),
-                      subtitle: Text('${account.email}\n${account.password}'),
-                      isThreeLine: true,
-                      onTap: _busy ? null : () => _useDemo(account),
-                    ),
-                  ),
-                ),
-            ],
           ],
         ),
       ),

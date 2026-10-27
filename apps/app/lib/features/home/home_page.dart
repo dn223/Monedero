@@ -299,9 +299,7 @@ class _ServerStatus extends ConsumerWidget {
     final (Color color, String text) = switch (health) {
       AsyncData(:final value) when value.isOk => (
         scheme.primary,
-        value.demoMode
-            ? 'Servidor conectado, modo demo activo'
-            : 'Servidor conectado',
+        value.demoMode ? 'Servidor conectado' : 'Servidor conectado',
       ),
       AsyncError() => (scheme.error, 'Sin conexión con el servidor'),
       _ => (scheme.outline, 'Conectando con el servidor…'),

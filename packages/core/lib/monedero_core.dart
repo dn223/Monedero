@@ -14,3 +14,4 @@ export 'src/enums.dart';
 export 'src/health.dart';
 export 'src/money.dart';
 export 'src/qr_payloads.dart';
+export 'src/terminal_code.dart';

@@ -33,15 +33,19 @@ Con un comando, la laptop del equipo levanta todo y entrega un **link público t
 - Los códigos que en producción llegan por correo se muestran en pantalla, y el titular ve sus correos en "Correos recibidos". No hace falta Mailpit.
 - La cámara para escanear QR funciona porque el link es `https`. Sin cámara, la caja tiene "Lista demo" y "Número".
 
-Sugerencia para que pruebe solo: titular en su celular (Ana) y caja en su computadora. La caja muestra su **código de caja**; Ana toca **Pagar en caja**, escribe el código y el monto, y el pago aparece al instante en "Últimos movimientos" de la caja.
+Sugerencia para que pruebe solo: se registra como titular en su celular y la caja queda en la computadora. La caja muestra su **código de caja**; el titular toca **Pagar en caja**, escribe el código y el monto, y el pago aparece al instante en "Últimos movimientos" de la caja.
 
-## Cuentas de demostración
+## Cuentas
 
-| Rol | Usuario | Contraseña | PIN |
-|---|---|---|---|
-| Titular | `ana@demo.local` o `bruno@demo.local` | `Titular1234` | `1234` |
-| Caja | `cajero@monedero.local` | `Cajero1234` | — |
-| Administración | `admin@monedero.local` | `Admin1234` | — |
+Al iniciar, la base tiene **solo la cuenta de administración** ([ADR 0015](adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)):
+
+| Rol | Cómo se entra |
+|---|---|
+| Administración | `admin@monedero.local` (`ADMIN_EMAIL`) con la contraseña `ADMIN_PASSWORD` que `tool/up.dart` genera en `.env` |
+| Caja | Administración → Cajas → **Nueva caja** entrega un código (`K7M4-Q2XP-HT9W`); la caja se abre solo con ese código |
+| Titular | Se registra en la app; el código de verificación aparece en pantalla y en "Correos recibidos" |
+
+Con `SAMPLE_DATA=true` en `.env` (antes de sembrar) se crean además los ejemplos Ana y Bruno (`Titular1234`, PIN `1234`) y un cajero.
 
 El guion de 10 minutos está en [demo.md](demo.md).
 

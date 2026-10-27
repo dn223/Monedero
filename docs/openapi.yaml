@@ -111,6 +111,40 @@ paths:
         '200': {$ref: '#/components/responses/Session'}
         '401': {$ref: '#/components/responses/Error'}
 
+  /v1/auth/terminals/login:
+    post:
+      tags: [Autenticación, Caja]
+      operationId: terminalLogin
+      summary: Abrir la caja con su código
+      description: El código lo entrega administración al crear la caja (se acepta con o sin guiones). Devuelve la sesión del usuario de esa caja y la credencial para `X-Terminal-Token`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: {type: string, example: K7M4-Q2XP-HT9W}
+      responses:
+        '200':
+          description: Sesión de la caja.
+          content:
+            application/json:
+              example:
+                accessToken: eyJ…
+                tokenType: Bearer
+                expiresInSeconds: 900
+                refreshToken: '…'
+                role: CASHIER
+                fullName: Caja 1
+                terminalToken: K7M4Q2XPHT9W
+                terminalId: 6f1c…
+                name: Caja 1
+                payCode: '482913'
+        '401': {description: 'Código incorrecto o caja revocada (`INVALID_CREDENTIALS`).', $ref: '#/components/responses/Error'}
+
   /v1/auth/staff/login:
     post:
       tags: [Autenticación]

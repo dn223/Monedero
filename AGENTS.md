@@ -47,7 +47,7 @@ Todos se ejecutan **desde la raíz del repositorio** y funcionan igual en Window
 | Aplicar migraciones | `dart run tool/migrate.dart` |
 | Sembrar datos de demostración | `dart run tool/seed.dart` |
 | Reiniciar la demo (borra todo; solo `DEMO_MODE=true`) | `dart run tool/reset_demo.dart` |
-| **Demostración en vivo de los 8 pasos** | `dart run tool/demo.dart --pausa` |
+| **Demostración en vivo de los 8 pasos** (usa `ADMIN_PASSWORD` de `.env`) | `dart run tool/demo.dart --pausa` |
 | App web servida por la API (<http://localhost:8080>) | `cd apps/app && flutter build web` |
 | **Link público para la exposición** (web + túnel, imprime el link) | `dart run tool/share.dart` |
 | APK release firmado | `cd apps/app && flutter build apk --release` |
@@ -192,7 +192,8 @@ Y actualiza la sección 9 de este archivo.
 - Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
 - Fase 6: APK release firmado con keystore en `~/.monedero/` (ADR 0013), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `tool/share.dart` abre un quick tunnel de Cloudflare (ADR 0011, `docs/exposicion.md`).
 - Observaciones del ingeniero: **módulos** activables desde Administración → Módulos (migración `0004`, `AppModule`, `ModuleService`, `MODULE_DISABLED`, ADR 0014) y asistente virtual del titular (`features/assistant/`).
-- Pruebas: 25 de `core`, 44 de la API y 8 de widgets, todas en verde con `tool/check.dart`.
+- Sistema sin datos de prueba (ADR 0015): `SAMPLE_DATA=false` siembra solo administración (`ADMIN_EMAIL`/`ADMIN_PASSWORD` en `.env`); la caja entra con su código (`POST /v1/auth/terminals/login`, migración `0005`); la app no muestra la palabra "demo".
+- Pruebas: 29 de `core`, 46 de la API y 8 de widgets, todas en verde con `tool/check.dart`.
 
 **Siguientes pasos** (siguiente entrega: Fase 7 — NFC):
 1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`. Confirmar los requerimientos adicionales del ingeniero y si acepta el link temporal como despliegue.

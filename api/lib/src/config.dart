@@ -26,6 +26,9 @@ class ApiConfig {
     this.rateLimitAuthPerMinute = 0,
     this.rateLimitTrustProxy = false,
     this.webDir = '',
+    this.sampleData = false,
+    this.adminEmail = 'admin@monedero.local',
+    this.adminPassword = '',
   });
 
   /// Construye la configuración desde un mapa de entorno, normalmente
@@ -66,6 +69,9 @@ class ApiConfig {
         name: 'RATE_LIMIT_TRUST_PROXY',
       ),
       webDir: env['WEB_DIR'] ?? '',
+      sampleData: _parseBool(env['SAMPLE_DATA'], name: 'SAMPLE_DATA'),
+      adminEmail: env['ADMIN_EMAIL'] ?? 'admin@monedero.local',
+      adminPassword: env['ADMIN_PASSWORD'] ?? '',
     );
   }
 
@@ -136,6 +142,17 @@ class ApiConfig {
   /// Carpeta con el build web de Flutter que la API sirve en `/`
   /// (vacío = no sirve la app web).
   final String webDir;
+
+  /// `true` siembra datos de ejemplo (titulares, cajero y saldos) y habilita
+  /// las sesiones sin contraseña de esos ejemplos. `false` (por defecto)
+  /// siembra solo la cuenta de administración (ver docs/adr/0015).
+  final bool sampleData;
+
+  /// Correo de la única cuenta de administración que se siembra.
+  final String adminEmail;
+
+  /// Contraseña de esa cuenta (solo en `.env`, nunca en el repositorio).
+  final String adminPassword;
 
   /// Lanza [StateError] si faltan los secretos necesarios para operar.
   void requireSecrets() {

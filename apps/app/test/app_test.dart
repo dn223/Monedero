@@ -63,9 +63,11 @@ void main() {
 
     expect(find.text(Brand.appName), findsWidgets);
     expect(
-      find.textContaining('modo demo activo', findRichText: true),
+      find.textContaining('Servidor conectado', findRichText: true),
       findsOneWidget,
     );
+    // Sin la palabra "demo" en pantalla.
+    expect(find.textContaining('demo', findRichText: true), findsNothing);
     for (final role in ['Soy titular', 'Caja', 'Administración']) {
       expect(find.text(role), findsOneWidget);
     }
@@ -82,14 +84,14 @@ void main() {
     );
   });
 
-  testWidgets('titular: entra con la cuenta demo y ve saldo y movimientos', (
+  testWidgets('titular: inicia sesión y ve saldo y movimientos', (
     tester,
   ) async {
     final api = FakeApi({
       'GET /health': health,
       'POST /v1/auth/cardholders/login': (r) {
         final body = jsonDecode(r.body) as Map;
-        expect(body['email'], 'ana@demo.local');
+        expect(body, {'email': 'ana@correo.com', 'password': 'Clave-segura-1'});
         return (200, sessionJson('CARDHOLDER', 'Ana López'));
       },
       'GET /v1/me/cards': (_) => (
@@ -105,7 +107,10 @@ void main() {
 
     await tester.tap(find.text('Soy titular'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Entrar como Ana López'));
+    expect(find.textContaining('Entrar como'), findsNothing);
+    await tester.enterText(find.byType(TextField).at(0), 'ana@correo.com');
+    await tester.enterText(find.byType(TextField).at(1), 'Clave-segura-1');
+    await tester.tap(find.widgetWithText(FilledButton, 'Entrar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Hola, Ana'), findsOneWidget);
@@ -157,12 +162,28 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('caja: lee una tarjeta de la lista demo, cobra y muestra el '
-      'comprobante', (tester) async {
+  testWidgets('caja: abre con su código, elige una tarjeta de la lista, cobra '
+      'y muestra el comprobante', (tester) async {
     String? key;
     final api = FakeApi({
       'GET /health': health,
-      'GET /v1/cards/terminal-activity': (_) => (200, {'items': <Object>[]}),
+      'POST /v1/auth/terminals/login': (r) {
+        expect((jsonDecode(r.body) as Map)['code'], 'K7M4Q2XPHT9W');
+        return (
+          200,
+          {
+            ...sessionJson('CASHIER', 'Caja 1'),
+            'terminalToken': 'K7M4Q2XPHT9W',
+            'terminalId': 't1',
+            'name': 'Caja 1',
+            'payCode': '482913',
+          },
+        );
+      },
+      'GET /v1/cards/terminal-activity': (r) {
+        expect(r.headers['x-terminal-token'], 'K7M4Q2XPHT9W');
+        return (200, {'items': <Object>[]});
+      },
       'GET /v1/demo/cards': (_) => (
         200,
         {
@@ -198,29 +219,16 @@ void main() {
         );
       },
     });
-    await pumpApp(
-      tester,
-      api,
-      stored: {
-        'session.CASHIER': jsonEncode(
-          _storedSession('CASHIER', 'Cajero Demo', 'jwt-CASHIER'),
-        ),
-        'terminal.link': jsonEncode({
-          'token': List.filled(64, 'a').join(),
-          'terminalId': 't1',
-          'name': 'Caja 1',
-          'payCode': '482913',
-        }),
-      },
-    );
+    await pumpApp(tester, api);
 
     await tester.tap(find.text('Caja'));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'k7m4-q2xp-ht9w');
+    await tester.tap(find.text('Abrir caja').last);
+    await tester.pumpAndSettle();
     expect(find.text('482 913'), findsOneWidget);
 
-    await tester.tap(find.text('Lista demo'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Elegir tarjeta de demostración'));
+    await tester.tap(find.text('Elegir tarjeta de la lista'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ana López').last);
     await tester.pumpAndSettle();

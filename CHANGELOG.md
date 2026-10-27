@@ -6,6 +6,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Cambiado — Sistema sin datos de prueba
+- La base empieza solo con la cuenta de administración (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, generada en `.env`); titulares y cajas se registran en la app. `SAMPLE_DATA=true` vuelve a sembrar los ejemplos (ADR 0015).
+- La caja se abre solo con el código de 12 caracteres que genera administración (`POST /v1/auth/terminals/login`, migración `0005_terminal_cashier.sql`, `TerminalCode` en `core`). Revocar la caja desactiva su código y su usuario.
+- Sin la palabra "demo" en la app: se quitaron las cuentas "Entrar como…", "Crear caja de demostración" y el botón "Reiniciar demo"; los códigos de verificación se siguen mostrando como "Código enviado a tu correo".
+- La caja lee la tarjeta por lista o número primero; la cámara queda como tercera opción.
+
 ### Agregado — Observaciones del ingeniero: módulos
 - Módulos de la aplicación que administración enciende o apaga en **Administración → Módulos**: asistente virtual, registro de titulares, pago con código de caja, QR de la tarjeta y cambio de PIN (migración `0004_app_modules.sql`, `AppModule` en `core`, ADR 0014).
 - La API hace cumplir cada módulo con `403 MODULE_DISABLED`; cada cambio queda en `module_changes` con quién y cuándo. `GET /v1/modules` (público) y `PUT /v1/admin/modules/{key}`.
