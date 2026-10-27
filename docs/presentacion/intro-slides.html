@@ -140,7 +140,7 @@
   <div class="grid">
     <div>
       <h1>Tu tarjeta prepago, siempre a la mano</h1>
-      <p class="lead">Monedero electrónico prepago de circuito cerrado: se recarga en caja, se gasta en el comercio y su saldo vive seguro en el servidor.</p>
+      <p class="lead">Monedero electrónico prepago de circuito cerrado</p>
     </div>
     <div style="display:flex; justify-content:center;">
       <div class="card">
@@ -153,8 +153,6 @@
       </div>
     </div>
   </div>
-  <p class="foot">Gestión de la Calidad del Software · Universidad Francisco Gavidia · Avance: fases 1 a 6 y módulos<br>
-  Kevin González · Cesar Cerón · David Navarrete · Leonardo · Bayron · Steven</p>
 </section>
 
 <!-- 2. Qué es -->
@@ -162,13 +160,12 @@
   <div class="tag"><div class="logo"></div>Monedero</div>
   <div class="num">2 / 6</div>
   <h2>Como la tarjeta prepago de un supermercado</h2>
-  <p class="lead">Cada tarjeta tiene un número único de 16 dígitos y un saldo. Es un proyecto académico, pero está diseñado como si manejara dinero real: no se puede perder ni duplicar un centavo.</p>
+  <p class="lead">Cada tarjeta tiene un número único de 16 dígitos y un saldo. Está diseñado como si manejara dinero real: no se puede perder ni duplicar un centavo.</p>
   <div class="roles">
     <div class="role"><div class="ic">👤</div><h3>Titular</h3><p>Ve su saldo y movimientos, muestra su QR en caja o paga desde el celular con el código de la caja. Resuelve dudas con el asistente y, si pierde la tarjeta, la bloquea al instante.</p></div>
     <div class="role"><div class="ic">🧾</div><h3>Caja</h3><p>Lee la tarjeta, cobra (con PIN si pasa de $25), recarga en múltiplos de $5 y entrega un comprobante.</p></div>
     <div class="role"><div class="ic">📊</div><h3>Administración</h3><p>Emite y repone tarjetas, autoriza cajas, enciende o apaga módulos y comprueba que la contabilidad cuadre.</p></div>
   </div>
-  <p class="foot">Una sola app para Android y web, con tema claro y oscuro.</p>
 </section>
 
 <!-- 3. Cómo está construido -->
@@ -189,15 +186,14 @@
     <div class="rule"><b>Sin cobros dobles</b>Si la red falla y se reintenta, se aplica una sola vez.</div>
     <div class="rule"><b>Libro inalterable</b>Los movimientos no se pueden editar ni borrar.</div>
   </div>
-  <p class="foot">Todo corre en una laptop con Docker, a costo $0. El servidor en la nube está diseñado, no contratado.</p>
 </section>
 
 <!-- 4. Módulos -->
 <section class="slide">
   <div class="tag"><div class="logo"></div>Monedero</div>
   <div class="num">4 / 6</div>
-  <h2>Módulos que se encienden y apagan</h2>
-  <p class="lead">Cada parte de la app se activa o desactiva desde el sistema, al instante. El backend lo hace cumplir: un módulo apagado no se puede usar.</p>
+  <h2>Módulos de administrador</h2>
+  <p class="lead">Manejo de mantenimiento y configuración de módulos, cajas y titulares, centralizado.</p>
   <div class="mods">
     <div>
       <div class="modlist">
@@ -235,33 +231,30 @@
     </ul>
     <div class="stats">
       <div class="stat hero"><b>$0.00</b><span>Diferencia de conciliación: el saldo de cada tarjeta es igual a la suma de sus movimientos.</span></div>
-      <div class="stat"><b>77</b><span>pruebas automáticas en verde</span></div>
+      <div class="stat"><b>83</b><span>pruebas automáticas en verde</span></div>
       <div class="stat"><b>1,000</b><span>cobros simultáneos a una tarjeta, sin saldo negativo</span></div>
     </div>
   </div>
   <p class="foot">Siguiente entrega: tarjetas físicas con NFC (Fase 7).</p>
 </section>
 
-<!-- 6. Demo -->
-<section class="slide">
+<!-- 6. Cierre -->
+<section class="slide cover">
   <div class="tag"><div class="logo"></div>Monedero</div>
-  <div class="num">6 / 6</div>
-  <h2>Ahora, el sistema en vivo</h2>
-  <div class="steps">
-    <div class="step"><i>1</i><b>Registrar</b><span>El titular crea su cuenta y verifica su correo.</span></div>
-    <div class="step"><i>2</i><b>Emitir</b><span>Administración emite y entrega la tarjeta.</span></div>
-    <div class="step"><i>3</i><b>Recargar $20</b><span>La caja lee la tarjeta y entrega el ticket.</span></div>
-    <div class="step"><i>4</i><b>Cobrar $7.35</b><span>Desde la caja o pagando con el código de caja.</span></div>
-    <div class="step"><i>5</i><b>Sobregiro</b><span>Un cobro de $15 se rechaza: saldo intacto.</span></div>
-    <div class="step"><i>6</i><b>Pérdida</b><span>El titular la bloquea con un código.</span></div>
-    <div class="step"><i>7</i><b>Reposición</b><span>Tarjeta nueva con el mismo saldo.</span></div>
-    <div class="step"><i>8</i><b>Conciliación</b><span>"Todo cuadra": diferencia $0.00.</span></div>
-    <div class="step"><i>9</i><b>Asistente</b><span>"¿Cuál es mi saldo?" responde con el saldo real.</span></div>
-    <div class="step"><i>10</i><b>Apagar un módulo</b><span>El asistente desaparece y la API lo rechaza.</span></div>
-  </div>
-  <div class="ticket">
-    <div class="code">LINK</div>
-    <div>Pueden seguirlo en su celular: abran el <b>link https://….trycloudflare.com</b> que compartimos y regístrense como titulares; administración les emite la tarjeta en vivo.</div>
+  <div class="grid">
+    <div>
+      <h1>Tu tarjeta prepago, siempre a la mano</h1>
+    </div>
+    <div style="display:flex; justify-content:center;">
+      <div class="card">
+        <div class="row">Monedero <span class="pill">Activa</span></div>
+        <div class="chip"></div>
+        <div class="label">Saldo disponible</div>
+        <div class="bal">$42.50</div>
+        <div class="pan">9990 0378 2720 0119</div>
+        <div class="name">ANA LÓPEZ</div>
+      </div>
+    </div>
   </div>
 </section>
 
