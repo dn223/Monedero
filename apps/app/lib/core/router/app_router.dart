@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/admin_page.dart';
+import '../../features/cashier/cashier_page.dart';
+import '../../features/holder/holder_page.dart';
+import '../../features/holder/register_page.dart';
 import '../../features/home/home_page.dart';
-import '../../features/preview/admin_preview_page.dart';
-import '../../features/preview/cashier_preview_page.dart';
-import '../../features/preview/holder_preview_page.dart';
+import '../../features/settings/server_page.dart';
 
-/// Rutas de la app. Las vistas de los roles son, por ahora, vistas de
-/// diseño con datos de ejemplo; se conectan a la API en las fases 4 y 5.
+/// Rutas de la app. Cada rol tiene una sola ruta que decide qué mostrar
+/// según su sesión: inicio de sesión o su pantalla principal. Los roles se
+/// validan otra vez en la API en cada llamada.
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     routes: [
@@ -16,16 +19,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HomePage(),
       ),
       GoRoute(
-        path: HolderPreviewPage.path,
-        builder: (context, state) => const HolderPreviewPage(),
+        path: HolderPage.path,
+        builder: (context, state) => const HolderPage(),
       ),
       GoRoute(
-        path: CashierPreviewPage.path,
-        builder: (context, state) => const CashierPreviewPage(),
+        path: RegisterPage.path,
+        builder: (context, state) => const RegisterPage(),
       ),
       GoRoute(
-        path: AdminPreviewPage.path,
-        builder: (context, state) => const AdminPreviewPage(),
+        path: CashierPage.path,
+        builder: (context, state) => const CashierPage(),
+      ),
+      GoRoute(
+        path: AdminPage.path,
+        builder: (context, state) => const AdminPage(),
+      ),
+      GoRoute(
+        path: ServerPage.path,
+        builder: (context, state) => const ServerPage(),
       ),
     ],
   );

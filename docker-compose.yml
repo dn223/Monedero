@@ -1,6 +1,8 @@
 # Entorno local de desarrollo y demostración (costo cero).
 #
 #   dart run tool/up.dart     levanta todo y crea .env si no existe
+#   dart run tool/share.dart  además compila la web y abre un link público
+#                             (perfil `compartir`, ver docs/exposicion.md)
 #   dart run tool/down.dart   lo detiene (agrega --borrar-datos para empezar de cero)
 #
 # Producción NO usa este archivo: ver deploy/docker-compose.prod.yml.
@@ -46,6 +48,12 @@ services:
       DATABASE_PORT: "5432"
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
+      # La API sirve el build web de Flutter en el mismo origen (ADR 0011).
+      # Se monta la carpeta `build` completa porque `flutter build web`
+      # vuelve a crear `build/web`.
+      WEB_DIR: /app/build/web
+    volumes:
+      - ./apps/app/build:/app/build:ro
     ports:
       # 0.0.0.0 para que el emulador (10.0.2.2) y los teléfonos de la misma
       # Wi-Fi lleguen a la API.
@@ -54,6 +62,19 @@ services:
       db:
         condition: service_healthy
       mailpit:
+        condition: service_started
+
+  tunnel:
+    # Link público temporal y gratuito (https://<algo>.trycloudflare.com)
+    # hacia la API, que también sirve la app web. Sin cuenta de Cloudflare;
+    # el link cambia cada vez que se crea el contenedor. Solo con:
+    #   docker compose --profile compartir up -d   (lo hace tool/share.dart)
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: [compartir]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://api:${API_PORT:-8080}
+    depends_on:
+      api:
         condition: service_started
 
 volumes:

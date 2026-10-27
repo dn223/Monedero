@@ -24,6 +24,38 @@ bool ensureEnvFile() {
   return true;
 }
 
+/// Agrega a `.env` las variables de `.env.example` que le falten (por
+/// ejemplo, las que trajo una fase nueva), con su valor de ejemplo o un
+/// secreto aleatorio. No cambia las que ya existen. Devuelve sus nombres.
+List<String> syncEnvFile() {
+  if (!envFile.existsSync()) return const [];
+  final example = File('${repoRoot.path}${Platform.pathSeparator}.env.example');
+  final current = readEnv();
+  final random = Random.secure();
+  final added = <String>[];
+  final buffer = StringBuffer();
+  for (final line in example.readAsLinesSync()) {
+    final trimmed = line.trim();
+    final separator = trimmed.indexOf('=');
+    if (trimmed.startsWith('#') || separator <= 0) continue;
+    final name = trimmed.substring(0, separator).trim();
+    if (current.containsKey(name)) continue;
+    final value = trimmed.substring(separator + 1).trim();
+    buffer.writeln(
+      '$name=${value == generatePlaceholder ? _randomHex(random, 32) : value}',
+    );
+    added.add(name);
+  }
+  if (added.isNotEmpty) {
+    final text = envFile.readAsStringSync();
+    final separator = text.endsWith('\n') ? '' : '\n';
+    envFile.writeAsStringSync(
+      '$text$separator\n# Agregadas por tool/ desde .env.example\n$buffer',
+    );
+  }
+  return added;
+}
+
 /// Lee `.env` como mapa clave → valor (ignora comentarios y líneas vacías).
 Map<String, String> readEnv() {
   if (!envFile.existsSync()) return const {};

@@ -70,7 +70,7 @@ Un titular puede tener varias tarjetas en su historial, pero en el prototipo sol
 
 ### Registro del titular
 1. El titular ingresa nombre, correo y contraseña; define su PIN de 4 dígitos.
-2. La API envía un código de verificación al correo (visible en Mailpit).
+2. La API envía un código de verificación al correo (visible en Mailpit; en modo demo también en pantalla).
 3. Al ingresar el código, el correo queda verificado y puede iniciar sesión con correo y contraseña.
 
 ### Emisión y entrega
@@ -78,7 +78,10 @@ Un titular puede tener varias tarjetas en su historial, pero en el prototipo sol
 2. Al entregarla, administración la marca como entregada → `ACTIVE`. En la demo es un solo clic.
 
 ### Recarga y cobro
-Ver el diagrama de secuencia en [architecture.md](architecture.md#3-flujo-de-una-operación-cobro-en-caja).
+Ver el diagrama de secuencia en [architecture.md](architecture.md#3-flujo-de-una-operación-cobro-en-caja). La caja lee la tarjeta (QR que muestra la app del titular, lista demo o número), muestra titular y saldo, y cobra o recarga; el comprobante sale como ticket.
+
+### Pago con código de caja
+Cada caja muestra un **código de caja** de 6 dígitos. El titular, desde su app, toca "Pagar en caja", escribe el código y el monto (y su PIN si supera $25). Es el mismo cobro que hace la caja, con su tarjeta `ACTIVE`, y aparece al instante en los movimientos de esa caja.
 
 ### Pérdida y reposición
 1. El titular reporta la pérdida en su app; la API envía un código por correo.
@@ -119,5 +122,13 @@ Ver el diagrama de secuencia en [architecture.md](architecture.md#3-flujo-de-una
 | signature | firma | HMAC-SHA256 del número + UID, truncado a 16 bytes |
 | master key | llave maestra | Secreto del servidor para firmar tarjetas |
 | card reader | lector de tarjetas | Componente de la app que obtiene número, UID y firma |
-| demo mode | modo demo | Configuración que habilita tarjetas de demostración y reinicio |
+| demo mode | modo demo | Configuración que habilita cuentas y tarjetas de demostración, códigos en pantalla, buzón y reinicio |
+| pay code | código de caja | 6 dígitos que identifican la caja para que el titular pague desde su app |
+| terminal token | credencial de caja | Secreto del dispositivo de caja (`X-Terminal-Token`); se muestra una sola vez |
+| refresh token | token de renovación | Secreto que permite pedir un JWT nuevo sin volver a escribir la contraseña; se rota en cada uso |
+| rate limit | límite de solicitudes | Máximo de solicitudes por minuto y cliente (`RATE_LIMITED`) |
+| demo inbox | buzón demo | Correos recientes del titular mostrados en la app (solo modo demo) |
+| module | módulo | Parte de la app que administración enciende o apaga (asistente, registro, pago con código, QR, cambio de PIN); la API la bloquea con `MODULE_DISABLED` |
+| assistant | asistente virtual | Chat del titular que responde dudas con sus datos reales; es un módulo |
+| tunnel | túnel / link público | Dirección `https://….trycloudflare.com` temporal hacia la laptop para la exposición |
 | PENDING / ACTIVE / BLOCKED / REPLACED | pendiente / activa / bloqueada / repuesta | Estados de la tarjeta |

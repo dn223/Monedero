@@ -26,6 +26,32 @@ abstract final class DemoUsers {
   static const holderPin = '1234';
 }
 
+/// Siembra la base según [ApiConfig.sampleData]: datos de ejemplo
+/// ([seedDemo]) o solo la cuenta de administración ([seedAdmin]).
+Future<bool> seedDatabase(Connection owner, ApiConfig config) =>
+    config.sampleData ? seedDemo(owner, config) : seedAdmin(owner, config);
+
+/// Crea la única cuenta de administración con `ADMIN_EMAIL` y
+/// `ADMIN_PASSWORD`. Sin titulares, cajas ni saldos: todo se registra desde
+/// la app. Es idempotente: si ya hay personal, no hace nada.
+Future<bool> seedAdmin(Connection owner, ApiConfig config) async {
+  final existing = await owner.execute('SELECT 1 FROM staff_users LIMIT 1');
+  if (existing.isNotEmpty) return false;
+  if (config.adminPassword.length < 10) {
+    throw StateError(
+      'ADMIN_PASSWORD debe tener al menos 10 caracteres (ver .env.example).',
+    );
+  }
+  final hasher = PasswordHasher(rounds: config.passwordHashRounds);
+  await query(
+    owner,
+    'INSERT INTO staff_users (full_name, email, password_hash, role) '
+    "VALUES ('Administración', @e, @p, 'ADMIN')",
+    {'e': config.adminEmail, 'p': hasher.hash(config.adminPassword)},
+  );
+  return true;
+}
+
 /// Siembra datos de demostración usando la conexión del dueño ([owner]).
 ///
 /// Es idempotente: si ya hay personal, no hace nada y devuelve `false`.

@@ -7,10 +7,14 @@ Prototipo de demostración del proyecto de **Gestión de la Calidad del Software
 > "Monedero" es un nombre provisional. Ver [NAMING.md](NAMING.md).
 
 <p align="center">
-  <img src="docs/img/inicio-light.png" alt="Pantalla inicial en tema claro" width="260">
-  <img src="docs/img/inicio-dark.png" alt="Pantalla inicial en tema oscuro" width="260">
+  <img src="docs/img/fase6-titular.jpg" alt="Titular: tarjeta virtual con saldo, pagar en caja y movimientos" width="420">
+  <img src="docs/img/fase6-caja.jpg" alt="Caja: comprobante tipo ticket de una recarga" width="420">
 </p>
-<p align="center"><em>Fase 1: pantalla inicial (web) conectada a la API local, en tema claro y oscuro. Las capturas de la demo completa se agregan en la Fase 6.</em></p>
+<p align="center">
+  <img src="docs/img/fase6-admin.jpg" alt="Administración: saldo en circulación, conciliación y gráfico de 14 días" width="420">
+  <img src="docs/img/fase6-inicio-celular.jpg" alt="Pantalla inicial en un celular, tema claro" width="200">
+</p>
+<p align="center"><em>Fase 6: titular, caja y administración conectados a la API real (web y celular, tema claro y oscuro).</em></p>
 
 | Componente | Tecnología |
 |---|---|
@@ -18,7 +22,8 @@ Prototipo de demostración del proyecto de **Gestión de la Calidad del Software
 | API | Dart, `shelf` + `shelf_router` |
 | Base de datos | PostgreSQL 17 |
 | Código compartido | `packages/core` (pub workspaces) |
-| Entorno local | Docker Compose: PostgreSQL, API y Mailpit |
+| Entorno local | Docker Compose: PostgreSQL, API (sirve también la app web) y Mailpit |
+| Exposición por link | Quick tunnel de Cloudflare en Docker (gratis, sin cuenta) |
 | Producción (solo preparada) | VPS Contabo, Caddy, pgBackRest → Backblaze B2 |
 
 ## Inicio rápido
@@ -29,38 +34,45 @@ Requisitos: Git, Flutter, Docker Desktop y Chrome ([guía de instalación](docs/
 git clone <url-del-repositorio> monedero && cd monedero
 flutter pub get
 dart run tool/up.dart
-cd apps/app
-flutter run -d chrome --web-port 5000
+cd apps/app && flutter build web
 ```
 
-- API: <http://localhost:8080/health>
+- App web y API: <http://localhost:8080> (para desarrollar con recarga en caliente: `cd apps/app && flutter run -d chrome --web-port 5000`)
 - Correos de verificación (Mailpit): <http://localhost:8025>
 - Detener todo: `dart run tool/down.dart`
 - Verificar antes de un commit: `dart run tool/check.dart`
 
-En Android: emulador con `flutter run`; teléfono, ver [setup.md § 5](docs/setup.md#5-conectar-android-a-la-api-local).
+**Link público para el ingeniero** (web y celular, sin estar en la laptop):
 
-**Demostración de los 8 pasos contra la API real** (registrar, emitir, recargar $20, cobrar $7.35, sobregiro, pérdida, reposición y conciliación):
+```bash
+dart run tool/share.dart
+```
+
+Compila la web, levanta todo con un túnel de Cloudflare e imprime `https://….trycloudflare.com` con un QR. Guía paso a paso: [docs/exposicion.md](docs/exposicion.md).
+
+En Android: APK con `cd apps/app && flutter build apk --release` ([docs/android.md](docs/android.md)); la app permite pegar o escanear la dirección del servidor sin recompilar. Emulador y teléfono por cable: [setup.md § 5](docs/setup.md#5-conectar-android-a-la-api-local).
+
+**Demostración de los 8 pasos** (registrar, emitir, recargar $20, cobrar $7.35, sobregiro, pérdida, reposición y conciliación): desde la app, con el guion de [docs/demo.md](docs/demo.md), o por consola contra la API real:
 
 ```bash
 dart run tool/demo.dart --pausa
 ```
 
-## Credenciales de demostración
+## Cuentas
 
-Las crea `dart run tool/up.dart` (o `dart run tool/seed.dart`).
+Al iniciar, la base tiene **solo la cuenta de administración** ([ADR 0015](docs/adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)):
 
-| Rol | Usuario | Contraseña | PIN |
-|---|---|---|---|
-| Administrador | `admin@monedero.local` | `Admin1234` | — |
-| Cajero | `cajero@monedero.local` | `Cajero1234` | — |
-| Titular | `ana@demo.local` / `bruno@demo.local` | `Titular1234` | `1234` |
+| Rol | Cómo se entra |
+|---|---|
+| Administración | `admin@monedero.local` (`ADMIN_EMAIL`) con la contraseña `ADMIN_PASSWORD` que `tool/up.dart` genera en `.env` |
+| Caja | Administración → Cajas → **Nueva caja** entrega un código (`K7M4-Q2XP-HT9W`); la caja se abre solo con ese código |
+| Titular | Se registra en la app; el código de verificación aparece en pantalla y en "Correos recibidos" |
 
-Solo para la demo local; nunca se usan en producción.
+Con `SAMPLE_DATA=true` en `.env` (antes de sembrar) se crean además los ejemplos Ana y Bruno (`Titular1234`, PIN `1234`) y un cajero.
 
 ## Estado
 
-**Fase 2 de 6** — base de datos y API completas, con las 5 pruebas obligatorias en verde. La app tiene por ahora solo la pantalla inicial (fases 3 a 5). Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+**Fases 1 a 6 terminadas** (entrega de esta semana, pendiente de revisión del equipo): la app conectada a la API en los tres roles, administración, renovación de sesión, límites de solicitudes, APK firmado y exposición por link. Siguen la Fase 7 (tarjetas NFC físicas) y la Fase 8 (producción). Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Documentación
 
@@ -74,6 +86,9 @@ Solo para la demo local; nunca se usan en producción.
 | [docs/database.md](docs/database.md) | Modelo de datos, migraciones y permisos |
 | [docs/testing.md](docs/testing.md) | Pruebas y qué demuestran |
 | [docs/demo.md](docs/demo.md) | Guion de demostración de 10 minutos |
+| [docs/exposicion.md](docs/exposicion.md) | Día de la exposición: link público para el ingeniero |
+| [docs/android.md](docs/android.md) | APK: compilar, firmar e instalar |
+| [docs/monedero-doc.pdf](docs/monedero-doc.pdf) | Documento de la presentación del avance, en 3 partes (fuente: `docs/presentacion/`) |
 | [docs/nfc.md](docs/nfc.md) | Plan para tarjetas físicas MIFARE Classic |
 | [docs/deploy-contabo.md](docs/deploy-contabo.md) | Producción (solo preparada) |
 | [docs/adr/](docs/adr/) | Decisiones técnicas |

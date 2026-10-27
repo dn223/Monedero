@@ -1,10 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- La app necesita red para hablar con la API (no hay operación sin conexión). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- La cámara (escanear QR de tarjetas, de cajas y del link) la declara
+         el plugin mobile_scanner. -->
+    <!-- usesCleartextTraffic: permite http:// hacia la laptop en la misma
+         Wi-Fi o el emulador (10.0.2.2). El link del túnel ya es https; en
+         producción (Fase 8) se puede quitar. -->
     <application
         android:label="Monedero"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,7 +1,23 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Firma del APK release (Fase 6). El keystore y sus contraseñas viven FUERA
+// del repositorio: ~/.monedero/key.properties (o android/key.properties, que
+// git ignora). Sin ese archivo, el release se firma con la llave de
+// depuración para que cualquier integrante pueda compilar. Ver docs/android.md.
+val releaseKey = Properties().apply {
+    listOf(
+        rootProject.file("key.properties"),
+        File(System.getProperty("user.home"), ".monedero/key.properties"),
+    ).firstOrNull { it.exists() }?.let { file ->
+        FileInputStream(file).use { load(it) }
+    }
 }
 
 android {
@@ -15,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Identificador neutral: NO cambia con la marca (AGENTS.md § 11).
         applicationId = "sv.edu.ufg.monedero"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -29,11 +45,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (!releaseKey.isEmpty) {
+            create("release") {
+                storeFile = file(releaseKey.getProperty("storeFile"))
+                storePassword = releaseKey.getProperty("storePassword")
+                keyAlias = releaseKey.getProperty("keyAlias")
+                keyPassword = releaseKey.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(
+                if (releaseKey.isEmpty) "debug" else "release",
+            )
         }
     }
 }
