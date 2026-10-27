@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monedero · Guía para exponer</title>
+<!--
+  Guía resumida para entender y exponer el sistema (docs/guia-exposicion.pdf).
+  Regenerar:
+    "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu ^
+      --no-pdf-header-footer --print-to-pdf=docs\guia-exposicion.pdf ^
+      docs\presentacion\guia-exposicion.html
+-->
+<style>
+  @page { size: letter; margin: 0.6in 0.7in; }
+  :root { --brand: #0B6E4F; --mint: #DCF5E8; --ink: #171D1A; --muted: #56605B; --line: #C9D6CF; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Roboto, "Segoe UI", system-ui, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.45; margin: 0; }
+  header { background: linear-gradient(135deg, #0B6E4F, #063D2C); color: #fff; border-radius: 14px; padding: 18px 22px; }
+  header h1 { margin: 0; font-size: 22pt; letter-spacing: -.5px; }
+  header p { margin: 6px 0 0; opacity: .85; }
+  h2 { color: var(--brand); font-size: 14pt; margin: 20px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--mint); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12px 0 4px; break-after: avoid; }
+  p { margin: 4px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.8pt; break-inside: avoid; }
+  th { background: var(--brand); color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: #F5FBF5; }
+  .box { background: var(--mint); border-left: 4px solid var(--brand); border-radius: 8px; padding: 10px 14px; margin: 8px 0; break-inside: avoid; }
+  .flow { display: flex; gap: 8px; align-items: stretch; margin: 8px 0 10px; }
+  .flow div { flex: 1; border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 9.5pt; }
+  .flow b { display: block; font-size: 11pt; margin-bottom: 2px; }
+  .flow .arr { flex: 0; color: var(--muted); align-self: center; font-size: 16pt; padding: 0; }
+  .a { background: #1D4E6E; } .b { background: var(--brand); } .c { background: #2E3A48; }
+  code { font-family: Consolas, monospace; background: #EEF3F0; padding: 1px 5px; border-radius: 4px; font-size: 9.5pt; }
+  .q b { color: var(--brand); }
+  .page { break-before: page; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Monedero — guía para entender y exponer</h1>
+  <p>Monedero electrónico prepago de circuito cerrado · Gestión de la Calidad del Software · UFG</p>
+</header>
+
+<h2>1. ¿Qué es?</h2>
+<p>Es una tarjeta prepago como la de un supermercado. Cada tarjeta tiene un número de 16 dígitos y un saldo; <b>se recarga en caja y se gasta en compras del mismo comercio</b> (circuito cerrado: no hay transferencias entre personas). Es un proyecto académico, pero está construido <b>como si manejara dinero real</b>: no se puede perder, duplicar ni inventar un centavo.</p>
+
+<h2>2. Cómo está construido</h2>
+<div class="flow">
+  <div class="a"><b>App Flutter</b>Android y web, una sola app con tres roles. Muestra y ayuda, pero nunca decide el saldo.</div>
+  <div class="arr">→</div>
+  <div class="b"><b>API en Dart</b>Valida quién eres, tu rol, la caja, la tarjeta, el PIN y el monto.</div>
+  <div class="arr">→</div>
+  <div class="c"><b>PostgreSQL</b>Única fuente del saldo y última barrera: rechaza cualquier saldo negativo.</div>
+</div>
+<table>
+  <tr><th>Regla del dinero</th><th>En palabras simples</th></tr>
+  <tr><td>Centavos enteros</td><td>$7.35 se guarda como 735. Nunca decimales, así no hay errores de redondeo.</td></tr>
+  <tr><td>Recargas</td><td>Solo múltiplos de $5. Cobros mayores que cero y nunca más que el saldo.</td></tr>
+  <tr><td>PIN</td><td>Las compras de más de $25 piden el PIN del titular.</td></tr>
+  <tr><td>Todo o nada</td><td>Cada cobro bloquea la tarjeta, revisa el saldo y registra el movimiento en una sola transacción.</td></tr>
+  <tr><td>Sin cobros dobles</td><td>Cada operación lleva una clave única; si la red falla y se reintenta, se aplica una sola vez.</td></tr>
+  <tr><td>Libro inalterable</td><td>Los movimientos no se pueden editar ni borrar. El saldo siempre es igual a la suma de los movimientos ("Todo cuadra").</td></tr>
+</table>
+
+<h2>3. Los tres roles y cómo se entra</h2>
+<table>
+  <tr><th>Rol</th><th>Qué hace</th><th>Cómo entra</th></tr>
+  <tr><td><b>Administración</b></td><td>Emite, entrega y repone tarjetas; crea y revoca cajas; activa o desactiva módulos; revisa el resumen y la conciliación.</td><td>Una sola cuenta: <code>admin@monedero.local</code>. La contraseña está en <code>ADMIN_PASSWORD</code> del archivo <code>.env</code>.</td></tr>
+  <tr><td><b>Caja</b></td><td>Elige la tarjeta (lista o número), recarga, cobra (con PIN si pasa de $25) y entrega comprobante. Muestra su código de 6 dígitos para que el titular pague.</td><td>Solo con el <b>código de la caja</b> (ej. <code>K7M4-Q2XP-HT9W</code>) que administración genera en Cajas → Nueva caja. Se muestra una sola vez.</td></tr>
+  <tr><td><b>Titular</b></td><td>Ve su saldo y movimientos, paga en caja desde el celular, cambia su PIN, reporta pérdida y usa el asistente (si está activo).</td><td>Se registra en la app. El código de verificación aparece en pantalla y en "Correos recibidos".</td></tr>
+</table>
+<div class="box"><b>Titular ≠ tarjeta.</b> El titular es la persona (nombre, correo, contraseña, PIN). La tarjeta es el medio de pago (número, saldo, estado). Si pierde la tarjeta, se le repone otra con el mismo saldo; la persona sigue siendo la misma.</div>
+
+<h2>4. ¿Por qué no hay cámara ni tarjetas físicas todavía?</h2>
+<p>La meta final (Fase 7) son <b>tarjetas con chip NFC</b> que la caja lee al acercarlas. Mientras tanto, la tarjeta se identifica con <b>códigos</b>: la caja la elige de la <b>lista de tarjetas activas</b> o escribe su número, y el servidor verifica que sea válida (número, identificador del chip y firma digital que solo el servidor puede comprobar). El titular también puede <b>pagar desde su celular</b> con "Pagar en caja", escribiendo el código de 6 dígitos de la caja, igual que se le paga a una tienda.</p>
+
+<h2>5. Módulos (lo que pidió el ingeniero)</h2>
+<p>Desde <b>Administración → Módulos</b> se activa o desactiva cada parte de la app, al instante y para todos. Lo importante: <b>el backend lo hace cumplir</b>. Si un módulo está apagado, la app oculta el botón y la API rechaza la operación (<code>MODULE_DISABLED</code>) aunque alguien la llame directamente. Cada cambio queda registrado con quién y cuándo.</p>
+<table>
+  <tr><th>Módulo</th><th>Si se apaga…</th></tr>
+  <tr><td>Asistente virtual</td><td>Desaparece el botón "Asistente" y la API no responde preguntas.</td></tr>
+  <tr><td>Registro de titulares</td><td>Nadie nuevo puede crear cuenta.</td></tr>
+  <tr><td>Pago con código de caja</td><td>El titular ya no puede pagar desde el celular; solo en caja.</td></tr>
+  <tr><td>QR de la tarjeta</td><td>La API deja de enviar los datos que forman el QR.</td></tr>
+  <tr><td>Cambio de PIN</td><td>El titular no puede cambiar su PIN desde la app.</td></tr>
+</table>
+<p><b>Siempre activos</b> (no se pueden apagar): recargas, cobros, reporte de pérdida y reposición, porque protegen el dinero. <i>En la exposición di "módulos", no "panel de administrador".</i></p>
+
+<h3>¿Cómo funciona el asistente?</h3>
+<ol>
+  <li>El titular escribe una pregunta en el chat (o toca una sugerencia).</li>
+  <li>La API revisa primero que el módulo <b>esté activo</b>; si no, responde "desactivado".</li>
+  <li>Limpia el texto (sin acentos ni mayúsculas) y busca <b>palabras clave</b> para saber de qué trata: saldo, movimientos, recargar, pagar, QR, PIN, pérdida, reposición, saludo o gracias. Si hay varias, la pérdida tiene prioridad.</li>
+  <li>Lee los <b>datos reales</b> del titular en la base: su tarjeta, su saldo y su último movimiento.</li>
+  <li>Responde con esos datos ("Tu saldo es $12.65") y ofrece 3 preguntas sugeridas. No menciona funciones de módulos apagados.</li>
+</ol>
+<div class="box">Es un asistente <b>por reglas</b>: no usa inteligencia artificial externa, no cuesta dinero, no envía datos a terceros y no guarda las conversaciones. Si no entiende, dice con qué temas sí puede ayudar. Más adelante podría conectarse a un modelo de lenguaje sin cambiar la app.</div>
+
+<h2>6. Orden para exponer (≈10 min)</h2>
+<table>
+  <tr><th>#</th><th>Dónde</th><th>Qué hacer</th><th>Qué se demuestra</th></tr>
+  <tr><td>1</td><td>💻 Admin</td><td>Entrar y crear "Caja 1" en Cajas. Anotar el código.</td><td>Login y control de cajas</td></tr>
+  <tr><td>2</td><td>💻 Caja</td><td>Abrir Caja y escribir el código.</td><td>La caja entra solo con su código</td></tr>
+  <tr><td>3</td><td>📱 Titular</td><td>Abrir el link, "Créala", registrarse con el código en pantalla.</td><td>Proyecto desplegado con URL y registro</td></tr>
+  <tr><td>4</td><td>💻 Admin</td><td>Titulares → Emitir tarjeta → Entregar ahora.</td><td>La tarjeta aparece sola en el celular</td></tr>
+  <tr><td>5</td><td>💻 Caja</td><td>Elegir tarjeta de la lista → Recargar $50.</td><td>Saldo en vivo y correo del aviso</td></tr>
+  <tr><td>6</td><td>💻 Caja</td><td>Cobrar $7.35, luego $26 (pide el PIN). Queda $16.65.</td><td>Seguridad del PIN</td></tr>
+  <tr><td>7</td><td>💻 Caja</td><td>Intentar cobrar $20.</td><td>Sin sobregiro: se rechaza y el saldo queda intacto</td></tr>
+  <tr><td>8</td><td>📱 Titular</td><td>Pagar en caja con el código de 6 dígitos de la caja.</td><td>Pago desde el celular</td></tr>
+  <tr><td>9</td><td>💻 Admin + 📱</td><td>Módulos: activar el asistente, preguntar "¿Cuál es mi saldo?", volver a apagarlo.</td><td>Módulos controlados por el backend</td></tr>
+  <tr><td>10</td><td>📱 + 💻</td><td>Reportar pérdida (bloquea) → la caja ya no puede cobrar → Admin repone la tarjeta.</td><td>Pérdida y reposición con el mismo saldo</td></tr>
+  <tr><td>11</td><td>💻 Admin</td><td>Resumen: "Todo cuadra" y el gráfico.</td><td>Conciliación en $0.00</td></tr>
+</table>
+
+<h2>7. Preguntas que puede hacer el ingeniero</h2>
+<div class="q">
+<p><b>¿Dónde está desplegado?</b> La API sirve la app web y un túnel de Cloudflare la publica con un link https. Corre en la laptop del equipo con Docker; el servidor en la nube (Contabo) está preparado pero no contratado.</p>
+<p><b>¿Qué pasa si se cae la red a mitad de un cobro?</b> La operación lleva una clave única; si se reintenta, la base devuelve el mismo resultado sin cobrar dos veces.</p>
+<p><b>¿Qué pasa si dos cajas cobran a la vez a la misma tarjeta?</b> La base bloquea la tarjeta durante cada cobro. Probamos 1,000 cobros simultáneos: nunca quedó saldo negativo.</p>
+<p><b>¿Alguien puede inventar una tarjeta?</b> No: cada tarjeta lleva una firma digital hecha con una llave que solo vive en el servidor.</p>
+<p><b>¿Y si alguien roba el código de una caja?</b> Administración revoca la caja y el código deja de funcionar al instante, junto con su sesión.</p>
+<p><b>¿Cómo prueban la calidad?</b> 83 pruebas automáticas (reglas, API contra PostgreSQL real y pantallas) corren antes de cada cambio con <code>dart run tool/check.dart</code>.</p>
+</div>
+
+<h2>8. Para tenerlo corriendo</h2>
+<ul>
+  <li>Levantar y obtener el link: <code>dart run tool/share.dart</code> (imprime el link y su QR).</li>
+  <li>Correos de prueba (solo en la laptop): <code>http://localhost:8025</code>.</li>
+  <li>Apagar todo: <code>dart run tool/down.dart</code>. Borrar todo y dejar solo administración: <code>dart run tool/reset_demo.dart</code> (luego apagar el asistente otra vez).</li>
+  <li>La laptop debe quedar encendida y con Internet: el link vive en ella y cambia si se recrea el túnel.</li>
+</ul>
+
+</body>
+</html>

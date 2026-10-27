@@ -7,6 +7,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 ## [Sin publicar]
 
 ### Cambiado — Sistema sin datos de prueba
+- Guía resumida para entender y exponer (`docs/guia-exposicion.pdf`, fuente en `docs/presentacion/guia-exposicion.html`); la presentación de entrada ya no menciona cuentas de prueba.
 - La base empieza solo con la cuenta de administración (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, generada en `.env`); titulares y cajas se registran en la app. `SAMPLE_DATA=true` vuelve a sembrar los ejemplos (ADR 0015).
 - La caja se abre solo con el código de 12 caracteres que genera administración (`POST /v1/auth/terminals/login`, migración `0005_terminal_cashier.sql`, `TerminalCode` en `core`). Revocar la caja desactiva su código y su usuario.
 - Sin la palabra "demo" en la app: se quitaron las cuentas "Entrar como…", "Crear caja de demostración" y el botón "Reiniciar demo"; los códigos de verificación se siguen mostrando como "Código enviado a tu correo".
