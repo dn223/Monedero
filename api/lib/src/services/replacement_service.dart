@@ -22,14 +22,76 @@ class ReplacementService {
   /// Inyector de fallas (pruebas).
   final FaultHook? faultHook;
 
+  /// Paso 1 de la tarjeta nueva pedida por el titular (sin pérdida): envía un
+  /// código al correo y lo devuelve (la API solo lo muestra en modo demo).
+  Future<String> startCardRequest(String cardholderId, String cardId) async {
+    final card = await cards.requireOwner(cardId, cardholderId);
+    if (card['status'] != CardStatus.active.wireName) {
+      throw const ApiException(
+        ApiErrorCode.cardNotActive,
+        'Solo puedes pedir el cambio de una tarjeta activa. Si la perdiste, '
+        'repórtala.',
+      );
+    }
+    return cards.auth.sendCode(
+      cardholderId: cardholderId,
+      email: card['email'] as String,
+      purpose: 'REQUEST_CARD',
+      cardId: cardId,
+      subject: 'Confirma la solicitud de tu tarjeta nueva',
+    );
+  }
+
+  /// Paso 2: con el código correcto se emite la tarjeta nueva y se traslada
+  /// todo el saldo, igual que en la reposición (regla 11).
+  Future<Map<String, Object?>> confirmCardRequest({
+    required String cardholderId,
+    required String cardId,
+    required String code,
+    required String idempotencyKey,
+  }) async {
+    await cards.requireOwner(cardId, cardholderId);
+    // Un reintento con la misma clave devuelve el resultado original sin
+    // pedir otra vez el código (que ya se consumió).
+    final done = await query(
+      pool,
+      'SELECT old_card_id, new_card_id, transferred_cents FROM replacements '
+      'WHERE idempotency_key = @k',
+      {'k': idempotencyKey},
+    );
+    if (done.isEmpty) {
+      await cards.auth.consumeCode(
+        cardholderId: cardholderId,
+        purpose: 'REQUEST_CARD',
+        code: code,
+        cardId: cardId,
+      );
+    }
+    return replace(
+      oldCardId: cardId,
+      idempotencyKey: idempotencyKey,
+      requestedBy: cardholderId,
+    );
+  }
+
   /// Crea la tarjeta nueva `ACTIVE`, traslada el saldo con dos movimientos,
   /// marca la anterior `REPLACED` y registra la auditoría. Si algo falla,
   /// PostgreSQL revierte todo.
+  ///
+  /// Con [adminId] es una reposición por pérdida (la tarjeta debe estar
+  /// `BLOCKED`); con [requestedBy] es una tarjeta nueva pedida por el titular
+  /// (la tarjeta debe estar `ACTIVE`).
   Future<Map<String, Object?>> replace({
     required String oldCardId,
-    required String adminId,
     required String idempotencyKey,
+    String? adminId,
+    String? requestedBy,
   }) async {
+    assert(
+      (adminId == null) != (requestedBy == null),
+      'Indica adminId o requestedBy, no ambos.',
+    );
+    final requested = requestedBy != null;
     return pool.runTx((tx) async {
       final old = await query(
         tx,
@@ -59,7 +121,13 @@ class ReplacementService {
         return _result(tx, previous.first);
       }
       final card = old.first;
-      if (card['status'] != CardStatus.blocked.wireName) {
+      if (requested && card['status'] != CardStatus.active.wireName) {
+        throw const ApiException(
+          ApiErrorCode.cardNotActive,
+          'Solo puedes pedir el cambio de una tarjeta activa.',
+        );
+      }
+      if (!requested && card['status'] != CardStatus.blocked.wireName) {
         throw const ApiException(
           ApiErrorCode.conflict,
           'Solo se reponen tarjetas BLOCKED (reporte de pérdida confirmado).',
@@ -122,7 +190,8 @@ class ReplacementService {
       final audit = await query(
         tx,
         'INSERT INTO replacements (old_card_id, new_card_id, transferred_cents, '
-        'idempotency_key, performed_by) VALUES (@o:uuid, @n:uuid, @t, @k, @a:uuid) '
+        'idempotency_key, performed_by, requested_by, reason) '
+        'VALUES (@o:uuid, @n:uuid, @t, @k, @a:uuid, @h:uuid, @why) '
         'RETURNING old_card_id, new_card_id, transferred_cents',
         {
           'o': oldCardId,
@@ -130,6 +199,8 @@ class ReplacementService {
           't': balance,
           'k': idempotencyKey,
           'a': adminId,
+          'h': requestedBy,
+          'why': requested ? 'REQUESTED' : 'LOST',
         },
       );
       return _result(tx, audit.first);
@@ -143,7 +214,7 @@ class ReplacementService {
     int amount,
     int balanceAfter,
     String key,
-    String adminId,
+    String? adminId,
   ) => query(
     tx,
     'INSERT INTO transactions (card_id, type, amount_cents, balance_after_cents, '

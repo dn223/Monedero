@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Monedero API
-  version: 0.6.0
+  version: 0.8.0
   summary: API del monedero electrónico prepago de circuito cerrado (prototipo UFG).
   description: |
     Convenciones (ver docs/api.md):
@@ -708,6 +708,172 @@ paths:
       responses:
         '200': {$ref: '#/components/responses/Transactions'}
 
+  /v1/admin/transactions/{id}/reversals:
+    post:
+      tags: [Administración]
+      operationId: reverseTransaction
+      summary: Anular una recarga o un cobro (contramovimiento)
+      description: |
+        Inserta un contramovimiento REVERSAL_IN (cobro) o REVERSAL_OUT (recarga);
+        el movimiento original no se edita. Cada movimiento se anula una sola vez
+        y anular una recarga nunca deja saldo negativo. Módulo `transaction_reversal`.
+      parameters:
+        - {$ref: '#/components/parameters/Id'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string, minLength: 5, maxLength: 200}
+            example: {reason: Cobro duplicado por error}
+      responses:
+        '201':
+          description: Anulación registrada (idéntica si se repite la Idempotency-Key).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reversalId: {type: string, format: uuid}
+                  originalTransactionId: {type: string, format: uuid}
+                  reversalTransactionId: {type: string, format: uuid}
+                  type: {type: string, enum: [REVERSAL_IN, REVERSAL_OUT]}
+                  amountCents: {type: integer, format: int64}
+                  balanceAfterCents: {type: integer, format: int64}
+                  reason: {type: string}
+                  cardNumberMasked: {type: string}
+                  createdAt: {type: string, format: date-time}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/me/cards/{id}/card-requests:
+    post:
+      tags: [Titular]
+      operationId: startCardRequest
+      summary: Pedir tarjeta nueva (envía código al correo)
+      description: La tarjeta debe estar ACTIVE. Módulo `card_transfer`.
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '202':
+          description: Código enviado (`demoCode` solo en modo demo).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codeSent: {type: boolean}
+                  demoCode: {type: string}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/me/cards/{id}/card-requests/confirm:
+    post:
+      tags: [Titular]
+      operationId: confirmCardRequest
+      summary: Confirmar con el código → tarjeta nueva con todo el saldo
+      parameters:
+        - {$ref: '#/components/parameters/Id'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [code], properties: {code: {type: string}}}
+      responses:
+        '201':
+          description: Tarjeta nueva ACTIVE; la anterior queda REPLACED.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferredCents: {type: integer, format: int64}
+                  oldCard: {$ref: '#/components/schemas/Card'}
+                  newCard: {$ref: '#/components/schemas/Card'}
+        '422': {$ref: '#/components/responses/Error'}
+
+  /v1/me/profile:
+    get:
+      tags: [Titular]
+      operationId: getProfile
+      summary: Perfil del titular
+      responses:
+        '200': {$ref: '#/components/responses/Profile'}
+    put:
+      tags: [Titular]
+      operationId: updateProfile
+      summary: Cambiar el nombre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [fullName], properties: {fullName: {type: string, minLength: 3, maxLength: 120}}}
+      responses:
+        '200': {$ref: '#/components/responses/Profile'}
+        '400': {$ref: '#/components/responses/Error'}
+
+  /v1/me/password:
+    put:
+      tags: [Titular]
+      operationId: changePassword
+      summary: Cambiar la contraseña
+      description: Contraseña actual incorrecta → 400 VALIDATION_FAILED (no 401).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: {type: string}
+                newPassword: {type: string, minLength: 8}
+      responses:
+        '200': {description: Contraseña cambiada.}
+        '400': {$ref: '#/components/responses/Error'}
+
+  /v1/me/email-change:
+    post:
+      tags: [Titular]
+      operationId: startEmailChange
+      summary: Cambiar correo (envía código al correo nuevo)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newEmail, password]
+              properties:
+                newEmail: {type: string, format: email}
+                password: {type: string}
+      responses:
+        '202': {description: Código enviado al correo nuevo (`demoCode` solo en modo demo).}
+        '400': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  /v1/me/email-change/confirm:
+    post:
+      tags: [Titular]
+      operationId: confirmEmailChange
+      summary: Confirmar el correo nuevo con el código
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [code], properties: {code: {type: string}}}
+      responses:
+        '200': {$ref: '#/components/responses/Profile'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+
 components:
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -751,6 +917,17 @@ components:
             amountCents: 735
 
   responses:
+    Profile:
+      description: Perfil del titular.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              cardholderId: {type: string, format: uuid}
+              fullName: {type: string}
+              email: {type: string, format: email}
+              createdAt: {type: string, format: date-time}
     Error:
       description: Error estándar.
       content:
@@ -818,7 +995,7 @@ components:
       type: object
       properties:
         transactionId: {type: string, format: uuid}
-        type: {type: string, enum: [TOP_UP, DEBIT, REPLACEMENT_OUT, REPLACEMENT_IN]}
+        type: {type: string, enum: [TOP_UP, DEBIT, REPLACEMENT_OUT, REPLACEMENT_IN, REVERSAL_IN, REVERSAL_OUT]}
         amountCents: {type: integer, format: int64}
         balanceAfterCents: {type: integer, format: int64}
         cardNumberMasked: {type: string}
@@ -833,6 +1010,6 @@ components:
           properties:
             code:
               type: string
-              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, MODULE_DISABLED, INTERNAL_ERROR]
+              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, MODULE_DISABLED, TRANSACTION_ALREADY_REVERSED, TRANSACTION_NOT_REVERSIBLE, INTERNAL_ERROR]
             message: {type: string}
             details: {type: object, additionalProperties: true}

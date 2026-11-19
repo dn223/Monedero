@@ -14,6 +14,26 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-18 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/observaciones-2`, que parte de `feat/fase-4-6-demo`):
+- Observaciones del ingeniero: anulación de transacciones, transferencia del saldo a una tarjeta nueva y apartado para editar los datos del usuario. Decisiones del equipo: solo administración anula; la transferencia es una tarjeta nueva pedida por el titular; el perfil incluye nombre, contraseña, correo y PIN; anulación y transferencia son módulos.
+- Anulación por **contramovimiento** (`REVERSAL_IN`/`REVERSAL_OUT`, tabla `reversals`): el movimiento original no se edita, la conciliación sigue en cero y no hay sobregiro.
+- Tarjeta nueva pedida por el titular con código por correo; reutiliza la reposición atómica.
+- Mi perfil en la app (botón en la barra del titular) y botón **Anular** en el historial de administración.
+- Migración `0006`, ADR 0016, API 0.8.0, documentación (API, OpenAPI, base de datos, dominio, pruebas).
+- `tool/check.dart` en verde: 32 de `core`, 54 de la API y 10 de la app.
+
+**Pendiente:**
+- Probar a mano en la app (web y celular) la anulación, la tarjeta nueva y el perfil; solo se probaron con pruebas automáticas.
+- Fusionar `feat/fase-4-6-demo` y esta rama en `main` tras la revisión del equipo.
+- Cambiar la contraseña no revoca las otras sesiones abiertas (pendiente para producción).
+
+**Problemas conocidos:**
+- No hay anulaciones parciales: se anula el monto completo.
+
+---
+
 ## 2026-10-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):

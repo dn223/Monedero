@@ -34,7 +34,13 @@ enum TransactionType {
   replacementOut('REPLACEMENT_OUT', -1),
 
   /// Saldo que entra a la tarjeta nueva (+).
-  replacementIn('REPLACEMENT_IN', 1);
+  replacementIn('REPLACEMENT_IN', 1),
+
+  /// Anulación de un cobro: devuelve el dinero (+).
+  reversalIn('REVERSAL_IN', 1),
+
+  /// Anulación de una recarga: retira el dinero (−).
+  reversalOut('REVERSAL_OUT', -1);
 
   const TransactionType(this.wireName, this.sign);
 
@@ -43,6 +49,13 @@ enum TransactionType {
 
   /// +1 si suma al saldo, −1 si resta.
   final int sign;
+
+  /// `true` si administración puede anular este tipo de movimiento: solo
+  /// recargas y cobros. Las reposiciones y las propias anulaciones no.
+  bool get isReversible => this == topUp || this == debit;
+
+  /// Tipo del contramovimiento que anula a este (solo si [isReversible]).
+  TransactionType get reversalType => this == debit ? reversalIn : reversalOut;
 
   /// Busca el tipo por su [wireName].
   static TransactionType fromWire(String value) =>

@@ -43,7 +43,7 @@ erDiagram
   transactions {
     uuid id PK
     uuid card_id FK
-    text type "TOP_UP|DEBIT|REPLACEMENT_OUT|REPLACEMENT_IN"
+    text type "TOP_UP|DEBIT|REPLACEMENT_OUT|REPLACEMENT_IN|REVERSAL_IN|REVERSAL_OUT"
     bigint amount_cents "CHECK > 0"
     bigint balance_after_cents "CHECK >= 0"
     uuid idempotency_key UK
@@ -85,6 +85,9 @@ Tablas auxiliares:
 - `terminals.pay_code` (migración `0002`): código de 6 dígitos, único, con el que el titular paga desde su app en esa caja.
 - `refresh_tokens` (migración `0003`): tokens de renovación de sesión. Guarda `subject_id` (titular o personal), `role`, el **SHA-256** del token, `expires_at` y `revoked_at`. Cada renovación revoca el usado y crea otro (rotación; [ADR 0010](adr/0010-renovacion-de-sesion-y-limite-de-solicitudes.md)). `subject_id` no es llave foránea porque puede apuntar a `cardholders` o a `staff_users`.
 - `terminals.cashier_id` (migración `0005`): usuario de personal (`CASHIER`) de cada caja; la caja entra con su código y opera como ese usuario ([ADR 0015](adr/0015-caja-con-codigo-y-sin-datos-de-ejemplo.md)).
+- `reversals` (migración `0006`): auditoría de anulaciones (`original_transaction_id` y `reversal_transaction_id` únicos, motivo, administrador, `idempotency_key` única). La anulación inserta un contramovimiento `REVERSAL_IN`/`REVERSAL_OUT`; el original nunca se edita ([ADR 0016](adr/0016-anulacion-tarjeta-nueva-y-perfil.md)).
+- `replacements` (migración `0006`): `performed_by` ahora es opcional y se agrega `requested_by` (titular) con `reason` `LOST` o `REQUESTED`; un `CHECK` exige al menos uno de los dos.
+- `verification_codes` (migración `0006`): propósitos `REQUEST_CARD` y `CHANGE_EMAIL`, y `new_email` para el cambio de correo.
 - `app_modules` (migración `0004`): un renglón por módulo de la app (`key`, `enabled`, `updated_at`, `updated_by` → `staff_users`). Nombres y descripciones viven en `AppModule` (`packages/core`). `module_changes` guarda cada cambio (quién, cuándo, encendido o apagado) y es de solo inserción para `monedero_app` ([ADR 0014](adr/0014-modulos-activables-y-asistente.md)). La idempotencia vive en `transactions.idempotency_key` y `replacements.idempotency_key`, ambas `UNIQUE`; la reposición usa claves derivadas `<clave>:out` y `<clave>:in` para sus dos movimientos.
 
 ## 2. Barreras en la base

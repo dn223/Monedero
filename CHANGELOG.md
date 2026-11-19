@@ -6,6 +6,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Observaciones del ingeniero (2026-11-18)
+- **Anulación de movimientos** por administración (módulo `transaction_reversal`): `POST /v1/admin/transactions/{id}/reversals` con motivo e `Idempotency-Key`. Se registra un contramovimiento `REVERSAL_IN`/`REVERSAL_OUT`; el original no se edita (regla 6), cada movimiento se anula una sola vez y anular una recarga nunca deja saldo negativo. Botón **Anular** en el historial de Administración → Tarjetas; aviso por correo al titular.
+- **Tarjeta nueva con traslado de saldo** pedida por el titular (módulo `card_transfer`): `POST /v1/me/cards/{id}/card-requests` y `/confirm` con código por correo; reutiliza la reposición atómica (`reason = REQUESTED`).
+- **Mi perfil** del titular: nombre, contraseña, correo (código al correo nuevo) y PIN (`/v1/me/profile`, `/v1/me/password`, `/v1/me/email-change`).
+- Migración `0006_reversals_transfer_profile.sql` (tabla `reversals`, tipos nuevos, vista de conciliación, `replacements.requested_by`, propósitos de código y `new_email`, módulos nuevos). Códigos `TRANSACTION_ALREADY_REVERSED` y `TRANSACTION_NOT_REVERSIBLE`. ADR 0016. API 0.8.0.
+- Pruebas: 3 de `core`, 8 de integración (anulación, tarjeta nueva, perfil) y 2 de widgets.
+
 ### Cambiado — Sistema sin datos de prueba
 - Documento de la exposición en tres partes (`docs/monedero-doc.pdf`) actualizado con módulos, asistente, caja con código y sistema sin datos de prueba; la presentación de entrada ya no menciona cuentas de prueba.
 - La base empieza solo con la cuenta de administración (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, generada en `.env`); titulares y cajas se registran en la app. `SAMPLE_DATA=true` vuelve a sembrar los ejemplos (ADR 0015).

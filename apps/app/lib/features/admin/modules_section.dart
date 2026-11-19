@@ -39,6 +39,8 @@ class _ModulesSectionState extends ConsumerState<ModulesSection> {
     AppModule.holderPayments => Icons.point_of_sale_rounded,
     AppModule.cardQr => Icons.qr_code_2_rounded,
     AppModule.pinChange => Icons.pin_outlined,
+    AppModule.cardTransfer => Icons.autorenew_rounded,
+    AppModule.transactionReversal => Icons.undo_rounded,
     null => Icons.extension_rounded,
   };
 

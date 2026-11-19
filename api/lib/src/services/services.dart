@@ -10,6 +10,7 @@ import 'demo_reset_service.dart';
 import 'ledger_service.dart';
 import 'module_service.dart';
 import 'replacement_service.dart';
+import 'reversal_service.dart';
 import 'terminal_service.dart';
 
 /// Todas las dependencias de negocio de la API.
@@ -38,6 +39,7 @@ class Services {
         cards,
         faultHook: replacementFault,
       ),
+      reversals: ReversalService(pool, mailer),
       terminals: TerminalService(pool, hasher),
       modules: modules,
       assistant: AssistantService(config, cards, modules),
@@ -56,6 +58,7 @@ class Services {
     required this.cards,
     required this.ledger,
     required this.replacements,
+    required this.reversals,
     required this.terminals,
     required this.modules,
     required this.assistant,
@@ -80,6 +83,9 @@ class Services {
 
   /// Reposiciones.
   final ReplacementService replacements;
+
+  /// Anulación de movimientos.
+  final ReversalService reversals;
 
   /// Terminales.
   final TerminalService terminals;

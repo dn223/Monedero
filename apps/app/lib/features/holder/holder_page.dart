@@ -16,6 +16,7 @@ import '../assistant/assistant_sheet.dart';
 import '../auth/login_page.dart';
 import 'holder_dialogs.dart';
 import 'holder_providers.dart';
+import 'profile_page.dart';
 import 'register_page.dart';
 
 /// Espacio del titular: inicio de sesión o, con sesión, su tarjeta.
@@ -105,12 +106,28 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
     );
   }
 
-  Future<void> _changePin() async {
-    final changed = await showDialog<bool>(
+  Future<void> _openProfile() async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const ProfilePage()));
+    _refresh();
+  }
+
+  Future<void> _requestNewCard(Map<String, Object?> card) async {
+    final result = await showDialog<Map<String, Object?>>(
       context: context,
-      builder: (_) => const ChangePinDialog(),
+      builder: (_) => NewCardDialog(
+        cardId: card['cardId']! as String,
+        balanceCents: card['balanceCents']! as int,
+      ),
     );
-    if ((changed ?? false) && mounted) showMessage(context, 'PIN cambiado.');
+    if (result == null || !mounted) return;
+    _refresh();
+    final fresh = result['newCard']! as Map<String, Object?>;
+    showMessage(
+      context,
+      'Tarjeta nueva ${fresh['numberMasked']} activa con '
+      '${Money.format(result['transferredCents']! as int)}.',
+    );
   }
 
   Future<void> _reportLoss(String cardId) async {
@@ -139,7 +156,7 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
     bool on(AppModule m) => ref.watch(moduleOnProvider(m));
     final payOn = on(AppModule.holderPayments);
     final qrOn = on(AppModule.cardQr) && card?['credentials'] != null;
-    final pinOn = on(AppModule.pinChange);
+    final newCardOn = on(AppModule.cardTransfer) && status == 'ACTIVE';
     final canReport = status == 'ACTIVE' || status == 'PENDING';
 
     return RoleScaffold(
@@ -150,6 +167,11 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
           tooltip: 'Actualizar',
           icon: const Icon(Icons.refresh_rounded),
           onPressed: _refresh,
+        ),
+        IconButton(
+          tooltip: 'Mi perfil',
+          icon: const Icon(Icons.manage_accounts_outlined),
+          onPressed: _openProfile,
         ),
         SignOutButton(holderSessionProvider),
       ],
@@ -225,23 +247,23 @@ class _HolderHomeState extends ConsumerState<HolderHome> {
                 icon: const Icon(Icons.qr_code_2_rounded),
                 label: const Text('Mostrar mi código QR'),
               ),
-            if (!data.isStale && (pinOn || canReport)) ...[
+            if (!data.isStale && (newCardOn || canReport)) ...[
               const SectionTitle('Mi tarjeta'),
               Card(
                 child: Column(
                   children: [
-                    if (pinOn)
+                    if (newCardOn)
                       ListTile(
-                        leading: const Icon(Icons.pin_outlined),
-                        title: const Text('Cambiar PIN'),
+                        leading: const Icon(Icons.autorenew_rounded),
+                        title: const Text('Pedir tarjeta nueva'),
                         subtitle: const Text(
-                          r'Lo pide la caja en compras de más de $25.00',
+                          'Tu saldo completo pasa a la tarjeta nueva',
                         ),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: _changePin,
+                        onTap: () => _requestNewCard(card),
                       ),
                     if (canReport) ...[
-                      if (pinOn) const Divider(height: 1),
+                      if (newCardOn) const Divider(height: 1),
                       ListTile(
                         leading: Icon(
                           Icons.report_outlined,

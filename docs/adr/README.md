@@ -19,3 +19,4 @@ Un ADR por decisión técnica, con el formato de [0000-plantilla.md](0000-planti
 | [0013](0013-firma-del-apk-fuera-del-repositorio.md) | Firma del APK release con un keystore fuera del repositorio | Aceptado |
 | [0014](0014-modulos-activables-y-asistente.md) | Módulos activables desde administración y asistente virtual por reglas | Aceptado |
 | [0015](0015-caja-con-codigo-y-sin-datos-de-ejemplo.md) | La caja entra con su código y la base empieza solo con administración | Aceptado |
+| [0016](0016-anulacion-tarjeta-nueva-y-perfil.md) | Anulación por contramovimiento, tarjeta nueva pedida por el titular y perfil | Aceptado |

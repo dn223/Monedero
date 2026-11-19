@@ -88,6 +88,15 @@ Cada caja muestra un **código de caja** de 6 dígitos. El titular, desde su app
 2. Con el código correcto, la tarjeta pasa a `BLOCKED` **de inmediato**.
 3. El titular solicita la reposición; administración la ejecuta. En **una sola transacción**: se crea la tarjeta nueva `ACTIVE`, se traslada el saldo (movimientos `REPLACEMENT_OUT`/`REPLACEMENT_IN`), la anterior pasa a `REPLACED` y se registra la auditoría en `replacements`. Si algo falla, se revierte todo y el saldo sigue en la tarjeta bloqueada.
 
+### Anulación de movimientos (módulo `transaction_reversal`)
+Solo administración, con un motivo. Se registra un **contramovimiento** (`REVERSAL_IN` o `REVERSAL_OUT`) en una transacción con `FOR UPDATE`; el movimiento original no se edita ni se borra (regla 6) y queda marcado como anulado en el historial. Cada movimiento se anula una sola vez; solo recargas y cobros; la tarjeta debe estar `ACTIVE` o `BLOCKED`; anular una recarga nunca deja saldo negativo. Ver [ADR 0016](adr/0016-anulacion-tarjeta-nueva-y-perfil.md).
+
+### Tarjeta nueva pedida por el titular (módulo `card_transfer`)
+El titular pide desde la app una tarjeta nueva sin haberla perdido. Confirma con un código por correo y, en una sola transacción, se emite la tarjeta nueva `ACTIVE`, se traslada todo el saldo y la anterior pasa a `REPLACED` (misma lógica que la reposición, con `reason = REQUESTED`).
+
+### Perfil del titular
+Nombre, contraseña (pide la actual), correo (el código se envía al correo nuevo) y PIN (módulo `pin_change`).
+
 ## 5. Tipos de movimiento
 
 | Tipo | Signo | Origen |
@@ -96,6 +105,8 @@ Cada caja muestra un **código de caja** de 6 dígitos. El titular, desde su app
 | `DEBIT` | − | Cobro en caja |
 | `REPLACEMENT_OUT` | − | Saldo que sale de la tarjeta repuesta |
 | `REPLACEMENT_IN` | + | Saldo que entra a la tarjeta nueva |
+| `REVERSAL_IN` | + | Anulación de un cobro: devuelve el dinero |
+| `REVERSAL_OUT` | − | Anulación de una recarga: retira el dinero (solo si alcanza el saldo) |
 
 ## 6. Glosario inglés–español
 
@@ -129,6 +140,7 @@ Cada caja muestra un **código de caja** de 6 dígitos. El titular, desde su app
 | rate limit | límite de solicitudes | Máximo de solicitudes por minuto y cliente (`RATE_LIMITED`) |
 | demo inbox | buzón demo | Correos recientes del titular mostrados en la app (solo modo demo) |
 | module | módulo | Parte de la app que administración enciende o apaga (asistente, registro, pago con código, QR, cambio de PIN); la API la bloquea con `MODULE_DISABLED` |
+| reversal | anulación | Contramovimiento que deshace una recarga o un cobro sin editar el original |
 | assistant | asistente virtual | Chat del titular que responde dudas con sus datos reales; es un módulo |
 | tunnel | túnel / link público | Dirección `https://….trycloudflare.com` temporal hacia la laptop para la exposición |
 | PENDING / ACTIVE / BLOCKED / REPLACED | pendiente / activa / bloqueada / repuesta | Estados de la tarjeta |
