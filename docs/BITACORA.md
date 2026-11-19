@@ -23,9 +23,10 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 - Mi perfil en la app (botón en la barra del titular) y botón **Anular** en el historial de administración.
 - Migración `0006`, ADR 0016, API 0.8.0, documentación (API, OpenAPI, base de datos, dominio, pruebas).
 - `tool/check.dart` en verde: 32 de `core`, 54 de la API y 10 de la app.
+- APK release nativo por arquitectura (`flutter build apk --release --split-per-abi`, ≈25 MB el de `arm64-v8a`), firmado con la llave oficial; contiene `libapp.so` (Dart compilado AOT) y `libflutter.so`, sin webview.
 
 **Pendiente:**
-- Probar a mano en la app (web y celular) la anulación, la tarjeta nueva y el perfil; solo se probaron con pruebas automáticas.
+- Probado a mano en la web (2026-11-18): anulación de un cobro (por API como administración, y su vista en la app del titular), cambio de nombre y de correo, y tarjeta nueva con traslado de saldo. Falta ver a mano el botón **Anular** en Administración (cubierto por prueba de widgets) y probar el APK release en un celular.
 - Fusionar `feat/fase-4-6-demo` y esta rama en `main` tras la revisión del equipo.
 - Cambiar la contraseña no revoca las otras sesiones abiertas (pendiente para producción).
 
