@@ -14,6 +14,23 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-19 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/observaciones-2`):
+- Prueba manual en la web (http://localhost:8080) con el link del equipo activo, sin reiniciar la demo: caja con código (cobro de $3.50 y recarga de $5 a la tarjeta de prueba), botón **Anular** en Administración → Tarjetas → historial (devolución con motivo, compra marcada "anulado"), conciliación en cero y vista del titular con el movimiento y el correo de aviso.
+- APK descargable desde el link: la API sirve el APK release de 64 bits en `/descargas/monedero.apk` y la pantalla inicial de la web muestra **Descargar app para Android**. El APK se compiló con `API_BASE_URL` igual al link del túnel, así que abre conectado al servidor.
+- `main.dart.js` se sirve sin caché para que un build nuevo se vea sin borrar la caché del navegador.
+- Se reinició solo el contenedor de la API (el túnel no se recreó; el link sigue igual). Descarga verificada por el link (mismo SHA-256 que el build).
+
+**Pendiente:**
+- Instalar el APK en un celular real y recorrer los tres roles.
+- Si el link del túnel cambia, recompilar el APK (o cambiar el servidor en la app).
+
+**Problemas conocidos:**
+- El APK descargable apunta a un link temporal; cuando se apague el túnel, la app pide otra dirección de servidor.
+
+---
+
 ## 2026-11-18 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/observaciones-2`, que parte de `feat/fase-4-6-demo`):

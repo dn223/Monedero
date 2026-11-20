@@ -194,7 +194,8 @@ Y actualiza la sección 9 de este archivo.
 - Observaciones del ingeniero: **módulos** activables desde Administración → Módulos (migración `0004`, `AppModule`, `ModuleService`, `MODULE_DISABLED`, ADR 0014) y asistente virtual del titular (`features/assistant/`).
 - Sistema sin datos de prueba (ADR 0015): `SAMPLE_DATA=false` siembra solo administración (`ADMIN_EMAIL`/`ADMIN_PASSWORD` en `.env`); la caja entra con su código (`POST /v1/auth/terminals/login`, migración `0005`); la app no muestra la palabra "demo".
 - Observaciones del 2026-11-18 (rama `feat/observaciones-2`): anulación por contramovimiento (`REVERSAL_IN`/`REVERSAL_OUT`, tabla `reversals`, módulo `transaction_reversal`), tarjeta nueva pedida por el titular con traslado de saldo (módulo `card_transfer`) y Mi perfil (nombre, contraseña, correo, PIN). Migración `0006`, ADR 0016.
-- Pruebas: 32 de `core`, 54 de la API y 10 de widgets, todas en verde con `tool/check.dart`.
+- APK descargable desde el link (2026-11-19): la API sirve `/descargas/monedero.apk` y la web muestra "Descargar app para Android" (`docs/android.md`).
+- Pruebas: 32 de `core`, 56 de la API y 10 de widgets, todas en verde con `tool/check.dart`.
 
 **Siguientes pasos** (siguiente entrega: Fase 7 — NFC):
 1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`. Confirmar los requerimientos adicionales del ingeniero y si acepta el link temporal como despliegue.

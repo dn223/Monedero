@@ -41,7 +41,7 @@ Demuestran que la arquitectura protege el dinero aunque haya concurrencia, reint
 | Paquete | Pruebas | Resultado |
 |---|---|---|
 | `packages/core` | 32 (anulación y módulos nuevos; Luhn, montos, formato, firma, errores, QR de tarjeta, vínculo de caja y URL del servidor) | ✅ |
-| `api` | 54 (anulación por contramovimiento, tarjeta nueva y perfil; unitarias de rutas, CORS, límite de solicitudes y app web; integración: las 5 obligatorias, reglas de caja, renovación y cierre de sesión, códigos y buzón demo, cajas demo, tablero, búsqueda y reinicio de la demo) | ✅ |
+| `api` | 56 (descarga del APK, anulación por contramovimiento, tarjeta nueva y perfil; unitarias de rutas, CORS, límite de solicitudes y app web; integración: las 5 obligatorias, reglas de caja, renovación y cierre de sesión, códigos y buzón demo, cajas demo, tablero, búsqueda y reinicio de la demo) | ✅ |
 | `apps/app` | 10 (anulación en el historial; inicio, sin servidor, inicio de sesión del titular, renovación automática de sesión, cobro en caja con comprobante, tablero de administración) | ✅ |
 
 Además se probó a mano la app publicada (build release servido por la API) a ancho de escritorio y de celular, en tema claro y oscuro, y por el link público del túnel: inicio de sesión de los tres roles, recarga, cobro con PIN, saldo insuficiente, ticket, tablero y gráfico.

@@ -90,4 +90,35 @@ void main() {
       expect((await get(handler, '/')).statusCode, 404);
     });
   });
+
+  group('Descarga del APK', () {
+    late Directory dir;
+    setUp(() {
+      dir = Directory.systemTemp.createTempSync('monedero_build');
+      Directory('${dir.path}/web').createSync();
+      File('${dir.path}/web/index.html').writeAsStringSync('<html>app</html>');
+    });
+    tearDown(() => dir.deleteSync(recursive: true));
+
+    test('sirve el APK como descarga con su tipo MIME', () async {
+      final apk = File(
+        '${dir.path}/app/outputs/flutter-apk/app-arm64-v8a-release.apk',
+      )..createSync(recursive: true);
+      apk.writeAsBytesSync([80, 75, 3, 4]);
+      final handler = buildApiHandler(ApiConfig(webDir: '${dir.path}/web'));
+      final response = await get(handler, '/descargas/monedero.apk');
+      expect(response.statusCode, 200);
+      expect(
+        response.headers['content-type'],
+        'application/vnd.android.package-archive',
+      );
+      expect(response.headers['content-disposition'], contains('attachment'));
+      expect((await response.read().expand((b) => b).toList()).length, 4);
+    });
+
+    test('sin APK compilado responde 404', () async {
+      final handler = buildApiHandler(ApiConfig(webDir: '${dir.path}/web'));
+      expect((await get(handler, '/descargas/monedero.apk')).statusCode, 404);
+    });
+  });
 }

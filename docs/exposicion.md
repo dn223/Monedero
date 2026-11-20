@@ -29,7 +29,7 @@ Con un comando, la laptop del equipo levanta todo y entrega un **link público t
 
 - **Computadora:** abre el link. En la pantalla inicial elige un rol; en modo demo cada pantalla de inicio de sesión ofrece "Entrar como…" con las cuentas de prueba.
 - **Celular (web):** escanea el QR de la consola o el que muestra la pantalla inicial ("Ábrela en el celular"). En Android, el menú del navegador ofrece **Instalar app** (es una PWA); en iPhone, Compartir → Agregar a inicio.
-- **Celular (APK):** abre la app → ícono de servidor (arriba a la derecha) → **Escanear QR del link** o pegar el link → Probar y guardar.
+- **Celular (APK):** en la pantalla inicial de la web toca **Descargar app para Android** e instálalo (ver `docs/android.md` § Descargar desde el link; si se compiló con el link, ya apunta al servidor). Si no, abre la app → ícono de servidor (arriba a la derecha) → **Escanear QR del link** o pegar el link → Probar y guardar.
 - Los códigos que en producción llegan por correo se muestran en pantalla, y el titular ve sus correos en "Correos recibidos". No hace falta Mailpit.
 - La cámara para escanear QR funciona porque el link es `https`. Sin cámara, la caja tiene "Lista demo" y "Número".
 

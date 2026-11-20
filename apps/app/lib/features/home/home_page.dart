@@ -7,6 +7,7 @@ import '../../brand/brand.dart';
 import '../../core/config/server_settings.dart';
 import '../../core/providers.dart';
 import '../../core/session/session.dart';
+import '../../core/web/open_url.dart';
 import '../../core/widgets/card_widgets.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/layout.dart';
@@ -239,6 +240,36 @@ class _OpenOnPhone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!kIsWeb) return const SizedBox.shrink();
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [_PageQr(), SizedBox(height: 12), DownloadApkButton()],
+    );
+  }
+}
+
+/// Botón que descarga el APK de Android servido por la API
+/// (`/descargas/monedero.apk`). Solo se muestra en la web.
+class DownloadApkButton extends ConsumerWidget {
+  /// Crea el botón.
+  const DownloadApkButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!kIsWeb) return const SizedBox.shrink();
+    final server = ref.watch(serverUrlProvider);
+    return FilledButton.tonalIcon(
+      onPressed: () => openUrl('$server/descargas/monedero.apk'),
+      icon: const Icon(Icons.android_rounded),
+      label: const Text('Descargar app para Android'),
+    );
+  }
+}
+
+class _PageQr extends StatelessWidget {
+  const _PageQr();
+
+  @override
+  Widget build(BuildContext context) {
     final url = Uri.base.origin;
     final local = Uri.base.host == 'localhost' || Uri.base.host == '127.0.0.1';
     if (local) {

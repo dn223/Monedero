@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — APK descargable desde el link (2026-11-19)
+- La API sirve el APK release de 64 bits en `/descargas/monedero.apk` (tipo `application/vnd.android.package-archive`, como adjunto; 404 si no se compiló) y la web muestra **Descargar app para Android** en la pantalla inicial. 2 pruebas nuevas de la API.
+
 ### Agregado — Observaciones del ingeniero (2026-11-18)
 - **Anulación de movimientos** por administración (módulo `transaction_reversal`): `POST /v1/admin/transactions/{id}/reversals` con motivo e `Idempotency-Key`. Se registra un contramovimiento `REVERSAL_IN`/`REVERSAL_OUT`; el original no se edita (regla 6), cada movimiento se anula una sola vez y anular una recarga nunca deja saldo negativo. Botón **Anular** en el historial de Administración → Tarjetas; aviso por correo al titular.
 - **Tarjeta nueva con traslado de saldo** pedida por el titular (módulo `card_transfer`): `POST /v1/me/cards/{id}/card-requests` y `/confirm` con código por correo; reutiliza la reposición atómica (`reason = REQUESTED`).
