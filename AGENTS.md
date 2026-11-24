@@ -19,7 +19,7 @@
 9. Cada operación que cambia saldo es **atómica, idempotente y auditable**; la base de datos es la última barrera.
 10. El equipo trabaja con varias IA: el protocolo de traspaso (sección 8) es obligatorio.
 
-Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [exposición por link](docs/exposicion.md) · [Android](docs/android.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
+Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [exposición por link](docs/exposicion.md) · [trabajar en la nube](docs/nube.md) · [Android](docs/android.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
 
 ---
 

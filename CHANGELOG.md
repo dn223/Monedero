@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Entorno en la nube (2026-11-24)
+- `tool/nube/instalar.sh` instala Flutter 3.47.7 en el entorno en la nube de Claude Code y `docs/nube.md` explica cómo usarlo.
+
 ### Agregado — Fase 7: tarjetas físicas NFC con NTAG215 (2026-11-23)
 - Administración graba una tarjeta en un chip **NTAG215** desde la app Android (Tarjetas → **Grabar chip NFC**). La tarjeta adopta el UID real del chip y la API recalcula la firma: `POST /v1/admin/cards/{id}/chip`. Repetir con el mismo chip no cambia nada; un chip no puede ser de dos tarjetas (`CHIP_ALREADY_LINKED`).
 - La caja lee el chip con **NFC** (primera opción en teléfonos con NFC): UID del hardware, número y firma de la memoria; la API valida igual que con el QR. Copiar la memoria a otro chip no sirve porque cambia el UID.

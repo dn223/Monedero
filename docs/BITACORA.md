@@ -48,6 +48,19 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-24 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `chore/entorno-nube`, desde `feat/observaciones-2`):
+- Script `tool/nube/instalar.sh` y guía `docs/nube.md` para trabajar en la nube de Claude Code. No cambia código de la app ni de la API.
+
+**Pendiente:**
+- Crear el entorno en claude.ai/code y abrir la primera sesión.
+
+**Problemas conocidos:**
+- Docker dentro del entorno en la nube no está probado.
+
+---
+
 ## 2026-11-23 — Integrante por confirmar — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`, que parte de `feat/observaciones-2`; sin push ni fusión):
