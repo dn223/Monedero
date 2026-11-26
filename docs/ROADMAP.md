@@ -20,7 +20,7 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | 4 | App conectada a la API: inicio de sesión real de los 3 roles, titular (registro, saldo, historial, QR real, pérdida, PIN, pago con código de caja), caja (QR con cámara, lista demo, número, cobro con PIN, recarga y comprobante) | ✅ Terminada (pendiente de revisión) |
 | 5 | Administración conectada (tablero, emitir, entregar, reponer, buscar, conciliación, cajas, reiniciar demo) y endurecimiento: renovación de sesión con tokens rotativos y límite de solicitudes | ✅ Terminada (pendiente de revisión) |
 | 6 | App Android instalable (ícono propio, nombre provisional "Monedero", APK release firmado), web instalable (PWA) y exposición por link público (`tool/share.dart`) | ✅ Terminada (pendiente de revisión; falta probar el APK en varios celulares) |
-| 7 | Tarjetas físicas NFC con **NTAG215** (ADR 0017): administración graba el chip (la tarjeta adopta su UID), la caja lo lee con `NfcCardReader` | 🔄 Código listo en `feat/fase-7-nfc`; grabar el chip y recargar probados en el Redmi (2026-11-25); faltan cobro, PIN y casos de error con el llavero |
+| 7 | Tarjetas físicas NFC con **NTAG215** (ADR 0017): administración graba el chip (la tarjeta adopta su UID), la caja lo lee con `NfcCardReader` | ✅ Probada con el APK en el Redmi y llaveros reales (2026-11-25); pendiente de revisión y de aprobar el ADR 0017 |
 | 8 | Producción: VPS Contabo, dominio, HTTPS con Caddy, PostgreSQL con respaldos pgBackRest → Backblaze B2, correo real, `DEMO_MODE=false`, monitoreo; el APK apunta a `https://<dominio>` | Pendiente (requiere aprobación del equipo: cuesta dinero) |
 
 ## Pendientes priorizados
@@ -50,4 +50,4 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 
 | Modelo | Android | NFC TagInfo | MIFARE Classic | NTAG215 | Probado por |
 |---|---|---|---|---|---|
-| Redmi Note 15 Pro 5G | — | Lee llaveros NTAG215 genéricos ("Non-genuine") | Sin probar (no hay tarjetas MIFARE; las del kit son de 125 kHz) | ✅ Lee | Equipo, 2026-11-23 |
+| Redmi Note 15 Pro 5G | — | Lee llaveros NTAG215 genéricos ("Non-genuine") | Sin probar (no hay tarjetas MIFARE; las del kit son de 125 kHz) | ✅ Lee, graba, recarga y cobra con la app | Equipo, 2026-11-23 y 2026-11-25 |
