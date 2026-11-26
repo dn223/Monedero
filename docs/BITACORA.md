@@ -14,6 +14,21 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-26 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`):
+- `tool/check.dart` en verde y commit de la documentación de la prueba completa con el llavero (`6fbd390`).
+- Rama `feat/fase-7-nfc` subida a GitHub (con GitHub Desktop) y pull request abierto contra `feat/observaciones-2`.
+
+**Pendiente:**
+- Revisión y fusión de `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc`; aprobación del ADR 0017.
+- Ensayo de la exposición con `tool/share.dart`.
+
+**Problemas conocidos:**
+- En este equipo no está instalado `gh`; los pull requests se abren desde GitHub Desktop o el navegador.
+
+---
+
 ## 2026-11-25 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`):

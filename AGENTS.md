@@ -200,7 +200,7 @@ Y actualiza la sección 9 de este archivo.
 
 **Siguientes pasos:**
 1. Fase 7 probada en el Redmi Note 15 Pro 5G con llaveros NTAG215 (2026-11-25): grabar, recargar, cobrar, PIN, `CHIP_ALREADY_LINKED`, chip sin grabar y conciliación, desde el APK conectado por el link. El ADR 0017 está como *Propuesto* hasta que el equipo lo apruebe.
-2. El equipo revisa y fusiona `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc`; ensayo de la exposición con `tool/share.dart`.
+2. El equipo revisa y fusiona `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc` (las tres ya están en GitHub; PR de la Fase 7 abierto contra `feat/observaciones-2` el 2026-11-26); ensayo de la exposición con `tool/share.dart`.
 3. Comprar tarjetas NTAG215 de 13.56 MHz (las del kit del duplicador son de 125 kHz). Pendiente técnico: contraseña de escritura del chip (PWD/PACK).
 4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.
 
