@@ -44,6 +44,7 @@ Verificadas el **2026-10-21** en pub.dev, Docker Hub y GitHub. Si instalas versi
 | `shared_preferences` | 2.5.6 | app (sesión por rol, URL del servidor, caja vinculada, último saldo) |
 | `qr_flutter` | 4.1.0 | app (QR de la tarjeta, de la caja y del link) |
 | `mobile_scanner` | 7.4.2 | app (escanear QR con la cámara; en la web solo con `https` o `localhost`) |
+| `nfc_manager` | 4.3.0 | app (leer y grabar chips NTAG215 en Android, Fase 7). Fijado exacto: la 4.4.0 salió el 2026-11-15 y aún no se prueba. Verificado en pub.dev el 2026-11-23 |
 | `qr` | 3.0.2 | raíz (QR del link en la consola de `tool/share.dart`) |
 | `shelf_static` | 1.2.0 | api (sirve el build web en el mismo origen) |
 | `cupertino_icons` | 2.0.0 | app (lo exige la compilación web) |

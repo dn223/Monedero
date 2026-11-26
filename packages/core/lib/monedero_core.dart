@@ -10,6 +10,7 @@ export 'src/api_error.dart';
 export 'src/app_module.dart';
 export 'src/card_number.dart';
 export 'src/card_signature.dart';
+export 'src/chip_card_layout.dart';
 export 'src/enums.dart';
 export 'src/health.dart';
 export 'src/money.dart';

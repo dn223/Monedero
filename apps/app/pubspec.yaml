@@ -1,7 +1,7 @@
 name: monedero
 description: "Monedero electrónico prepago (prototipo UFG). App Flutter para Android y Web."
 publish_to: 'none'
-version: 0.7.0+7
+version: 0.8.0+8
 
 environment:
   sdk: ^3.13.0
@@ -22,6 +22,8 @@ dependencies:
   shared_preferences: ^2.5.6
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.2
+  # NFC (Fase 7). Fijado exacto: ver docs/setup.md.
+  nfc_manager: 4.3.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0

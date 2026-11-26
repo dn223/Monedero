@@ -359,6 +359,18 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       auth(r, admin);
       return jsonResponse(await s.cards.deliver(id));
     })
+    // Tarjeta física NFC (Fase 7, ADR 0017): adopta el UID del chip.
+    ..post('/v1/admin/cards/<id>/chip', (Request r, String id) async {
+      final p = auth(r, admin);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.cards.linkChip(
+          cardId: id,
+          chipUid: requireString(b, 'chipUid'),
+          adminId: p.id,
+        ),
+      );
+    })
     ..post('/v1/admin/cards/<id>/replace', (Request r, String id) async {
       final p = auth(r, admin);
       return jsonResponse(

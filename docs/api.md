@@ -62,6 +62,7 @@ La app decide por `code`, nunca por `message`.
 | `MODULE_DISABLED` | 403 | Administración apagó el módulo que se intentó usar (`details.module`) |
 | `TRANSACTION_ALREADY_REVERSED` | 409 | El movimiento ya fue anulado (cada uno se anula una sola vez) |
 | `TRANSACTION_NOT_REVERSIBLE` | 409 | Se intentó anular algo que no es recarga ni cobro (reposiciones o anulaciones) |
+| `CHIP_ALREADY_LINKED` | 409 | El UID del chip NFC ya pertenece a otra tarjeta |
 | `RATE_LIMITED` | 429 | Demasiadas solicitudes del mismo cliente en un minuto (`details.retryAfterSeconds`) |
 | `INTERNAL_ERROR` | 500 | Error inesperado (sin detalles internos) |
 
@@ -102,6 +103,7 @@ La app decide por `code`, nunca por `message`.
 | `GET` | `/v1/admin/cards?q=` | admin | Buscar tarjetas |
 | `POST` | `/v1/admin/cards` | admin | `{cardholderId}` → tarjeta `PENDING` |
 | `POST` | `/v1/admin/cards/{id}/deliver` | admin | `PENDING` → `ACTIVE` |
+| `POST` | `/v1/admin/cards/{id}/chip` | admin | `{chipUid}` (7 bytes en hex): la tarjeta `PENDING`/`ACTIVE` adopta el UID del chip NTAG215 y su firma se recalcula; devuelve la tarjeta con las credenciales a grabar. Repetir con el mismo chip no cambia nada; queda en `card_chip_links` ([ADR 0017](adr/0017-tarjetas-fisicas-ntag215.md)) |
 | `POST` | `/v1/admin/cards/{id}/replace` | admin | Reposición (transacción única) + `Idempotency-Key` |
 | `POST` | `/v1/admin/transactions/{id}/reversals` | admin | Anula una recarga o un cobro: `{reason}` (≥ 5 caracteres) + `Idempotency-Key`. Inserta `REVERSAL_IN`/`REVERSAL_OUT`; el original no cambia. Módulo `transaction_reversal` |
 | `GET` | `/v1/admin/cards/{id}/transactions` | admin | Movimientos de una tarjeta |

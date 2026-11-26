@@ -87,6 +87,82 @@ class CardService {
     return (await _byId(pool, cardId))!;
   }
 
+  /// Vincula un chip NFC a la tarjeta (Fase 7, ADR 0017).
+  ///
+  /// La tarjeta adopta el UID real del chip y su firma se recalcula con la
+  /// llave maestra (regla 10); devuelve la tarjeta con las credenciales que la
+  /// app escribe en el chip. Solo tarjetas `PENDING` o `ACTIVE`. Repetir con
+  /// el mismo chip no cambia nada (permite reintentar si falló la escritura).
+  /// Cada vinculación queda en `card_chip_links`.
+  Future<Map<String, Object?>> linkChip({
+    required String cardId,
+    required String chipUid,
+    required String adminId,
+  }) async {
+    if (!ChipCardLayout.isValidUid(chipUid)) {
+      throw ApiException(
+        ApiErrorCode.validationFailed,
+        'El UID del chip debe tener ${ChipCardLayout.uidBytes} bytes en '
+        'hexadecimal.',
+      );
+    }
+    final uid = chipUid.toUpperCase();
+    return pool.runTx((tx) async {
+      final rows = await query(
+        tx,
+        'SELECT number, uid, status FROM cards WHERE id = @id:uuid FOR UPDATE',
+        {'id': cardId},
+      );
+      if (rows.isEmpty) {
+        throw const ApiException(
+          ApiErrorCode.notFound,
+          'Tarjeta no encontrada.',
+        );
+      }
+      final card = rows.first;
+      final status = card['status'] as String;
+      if (status != 'PENDING' && status != 'ACTIVE') {
+        throw ApiException(
+          ApiErrorCode.cardNotActive,
+          'Solo se graba el chip de una tarjeta pendiente o activa.',
+          details: {'status': status},
+        );
+      }
+      final previousUid = (card['uid'] as String).toUpperCase();
+      if (previousUid == uid) return (await _byId(tx, cardId))!;
+
+      final taken = await query(
+        tx,
+        'SELECT 1 FROM cards WHERE uid = @u AND id <> @id:uuid',
+        {'u': uid, 'id': cardId},
+      );
+      if (taken.isNotEmpty) {
+        throw const ApiException(
+          ApiErrorCode.chipAlreadyLinked,
+          'Ese chip ya está vinculado a otra tarjeta.',
+        );
+      }
+      final signature = CardSignature.sign(
+        masterKey: config.cardMasterKey,
+        number: card['number'] as String,
+        uid: uid,
+      );
+      await query(
+        tx,
+        'UPDATE cards SET uid = @u, signature = @s, updated_at = now() '
+        'WHERE id = @id:uuid',
+        {'u': uid, 's': signature, 'id': cardId},
+      );
+      await query(
+        tx,
+        'INSERT INTO card_chip_links (card_id, previous_uid, chip_uid, '
+        'performed_by) VALUES (@c:uuid, @p, @u, @a:uuid)',
+        {'c': cardId, 'p': previousUid, 'u': uid, 'a': adminId},
+      );
+      return (await _byId(tx, cardId))!;
+    });
+  }
+
   /// Tarjetas del titular, con credenciales para su QR.
   Future<List<Map<String, Object?>>> cardsOf(String cardholderId) async {
     final rows = await query(

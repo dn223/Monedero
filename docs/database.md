@@ -88,6 +88,7 @@ Tablas auxiliares:
 - `reversals` (migración `0006`): auditoría de anulaciones (`original_transaction_id` y `reversal_transaction_id` únicos, motivo, administrador, `idempotency_key` única). La anulación inserta un contramovimiento `REVERSAL_IN`/`REVERSAL_OUT`; el original nunca se edita ([ADR 0016](adr/0016-anulacion-tarjeta-nueva-y-perfil.md)).
 - `replacements` (migración `0006`): `performed_by` ahora es opcional y se agrega `requested_by` (titular) con `reason` `LOST` o `REQUESTED`; un `CHECK` exige al menos uno de los dos.
 - `verification_codes` (migración `0006`): propósitos `REQUEST_CARD` y `CHANGE_EMAIL`, y `new_email` para el cambio de correo.
+- `card_chip_links` (migración `0007`): cada vez que una tarjeta adopta el UID de un chip NFC NTAG215 (`previous_uid`, `chip_uid`, administrador `performed_by` y fecha). Solo inserción para la API. La tarjeta actualiza `cards.uid` y `cards.signature`; el saldo no cambia ([ADR 0017](adr/0017-tarjetas-fisicas-ntag215.md)).
 - `app_modules` (migración `0004`): un renglón por módulo de la app (`key`, `enabled`, `updated_at`, `updated_by` → `staff_users`). Nombres y descripciones viven en `AppModule` (`packages/core`). `module_changes` guarda cada cambio (quién, cuándo, encendido o apagado) y es de solo inserción para `monedero_app` ([ADR 0014](adr/0014-modulos-activables-y-asistente.md)). La idempotencia vive en `transactions.idempotency_key` y `replacements.idempotency_key`, ambas `UNIQUE`; la reposición usa claves derivadas `<clave>:out` y `<clave>:in` para sus dos movimientos.
 
 ## 2. Barreras en la base

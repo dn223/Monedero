@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chips que Monedero atiende cuando ninguna lectura está en curso (Fase 7,
+     ADR 0017): NTAG215 = NfcA + MifareUltralight. -->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <tech-list>
+        <tech>android.nfc.tech.NfcA</tech>
+        <tech>android.nfc.tech.MifareUltralight</tech>
+    </tech-list>
+</resources>

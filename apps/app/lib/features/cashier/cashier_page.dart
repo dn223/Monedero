@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monedero_core/monedero_core.dart';
 
 import '../../card_reader/card_reader.dart';
+import '../../card_reader/nfc_card_reader.dart';
+import '../../card_reader/nfc_chip.dart';
 import '../../card_reader/simulated_card_reader.dart';
 import '../../core/api/api_client.dart';
 import '../../core/format.dart';
@@ -146,12 +148,33 @@ class CashierDesk extends ConsumerStatefulWidget {
 
 enum _Operation { debit, topUp }
 
+/// Formas de leer la tarjeta: chip NFC (Fase 7) o las simuladas.
+enum _ReadMode {
+  nfc,
+  demoList,
+  manual,
+  camera;
+
+  SimulatedReadMode? get simulated => switch (this) {
+    nfc => null,
+    demoList => SimulatedReadMode.demoList,
+    manual => SimulatedReadMode.manual,
+    camera => SimulatedReadMode.camera,
+  };
+
+  String get label => simulated?.label ?? 'NFC';
+
+  IconData get icon => simulated?.icon ?? Icons.contactless_rounded;
+}
+
 class _CashierDeskState extends ConsumerState<CashierDesk> {
   final _amount = TextEditingController();
   final _pin = TextEditingController();
   Timer? _timer;
 
-  SimulatedReadMode _mode = SimulatedReadMode.demoList;
+  /// Modo elegido por el cajero; `null` = el primero disponible.
+  _ReadMode? _chosenMode;
+  _ReadMode _mode = _ReadMode.manual;
   _Operation _operation = _Operation.debit;
   int? _topUpCents = 1000;
 
@@ -184,10 +207,13 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
     super.dispose();
   }
 
-  CardReader get _reader => SimulatedCardReader(
-    mode: _mode,
-    loadDemoCards: () => ref.read(cashierApiProvider).demoCards(),
-  );
+  CardReader get _reader => switch (_mode.simulated) {
+    null => NfcCardReader(ref.read(nfcChipIoProvider)),
+    final simulated => SimulatedCardReader(
+      mode: simulated,
+      loadDemoCards: () => ref.read(cashierApiProvider).demoCards(),
+    ),
+  };
 
   Future<void> _guard(Future<void> Function() action) async {
     setState(() {
@@ -320,13 +346,15 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
   @override
   Widget build(BuildContext context) {
     final demo = ref.watch(demoModeProvider);
-    // Sin lector NFC todavía: primero la lista y el número, luego la cámara.
+    // Con NFC (teléfono Android) la tarjeta física va primero (Fase 7).
+    final nfc = ref.watch(nfcStatusProvider).value;
     final modes = [
-      if (demo) SimulatedReadMode.demoList,
-      SimulatedReadMode.manual,
-      SimulatedReadMode.camera,
+      if (nfc != null && nfc != NfcStatus.unsupported) _ReadMode.nfc,
+      if (demo) _ReadMode.demoList,
+      _ReadMode.manual,
+      _ReadMode.camera,
     ];
-    if (!modes.contains(_mode)) _mode = modes.first;
+    _mode = modes.contains(_chosenMode) ? _chosenMode! : modes.first;
     return RoleScaffold(
       title: widget.terminal.name,
       icon: Icons.point_of_sale_rounded,
@@ -355,7 +383,7 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
           ),
           const SectionTitle('Tarjeta'),
           if (_cardInfo == null) ...[
-            SegmentedButton<SimulatedReadMode>(
+            SegmentedButton<_ReadMode>(
               showSelectedIcon: false,
               segments: [
                 for (final m in modes)
@@ -366,7 +394,7 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
                   ),
               ],
               selected: {_mode},
-              onSelectionChanged: (s) => setState(() => _mode = s.first),
+              onSelectionChanged: (s) => setState(() => _chosenMode = s.first),
             ),
             const SizedBox(height: 12),
             FilledButton.tonalIcon(
@@ -376,15 +404,19 @@ class _CashierDeskState extends ConsumerState<CashierDesk> {
               onPressed: _busy ? null : _readCard,
               icon: const Icon(Icons.contactless_outlined),
               label: Text(switch (_mode) {
-                SimulatedReadMode.camera => 'Escanear la tarjeta del titular',
-                SimulatedReadMode.demoList => 'Elegir tarjeta de la lista',
-                SimulatedReadMode.manual => 'Escribir número de tarjeta',
+                _ReadMode.nfc => 'Acercar la tarjeta',
+                _ReadMode.camera => 'Escanear la tarjeta del titular',
+                _ReadMode.demoList => 'Elegir tarjeta de la lista',
+                _ReadMode.manual => 'Escribir número de tarjeta',
               }),
             ),
             const SizedBox(height: 8),
             Text(
-              'Las tarjetas físicas con NFC llegan en la Fase 7; mientras '
-              'tanto se eligen de la lista o por su número.',
+              modes.contains(_ReadMode.nfc)
+                  ? 'Acerca la tarjeta física (NTAG215) a la parte trasera '
+                        'del teléfono, o usa el QR del titular.'
+                  : 'Para leer tarjetas físicas usa un teléfono Android con '
+                        'NFC; aquí se eligen por su número o con el QR.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ] else

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- La app necesita red para hablar con la API (no hay operación sin conexión). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Fase 7: leer y grabar tarjetas NTAG215. No es obligatorio: sin NFC
+         la caja sigue con QR, lista o número. -->
+    <uses-permission android:name="android.permission.NFC"/>
+    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
     <!-- La cámara (escanear QR de tarjetas, de cajas y del link) la declara
          el plugin mobile_scanner. -->
     <!-- usesCleartextTraffic: permite http:// hacia la laptop en la misma
@@ -32,6 +36,16 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Fase 7: si un chip NTAG215 queda cerca cuando la app ya cerró
+                 la lectura, Android lo entrega a Monedero (singleTop: no abre
+                 otra pantalla) en vez de mostrar "no hay aplicación que
+                 admita esta etiqueta NFC". -->
+            <intent-filter>
+                <action android:name="android.nfc.action.TECH_DISCOVERED"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.action.TECH_DISCOVERED"
+                android:resource="@xml/nfc_tech_filter"/>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

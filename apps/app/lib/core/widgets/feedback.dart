@@ -53,6 +53,8 @@ String friendlyError(Object error) {
       'Este movimiento ya fue anulado.',
     ApiErrorCode.transactionNotReversible =>
       'Solo se pueden anular recargas y cobros.',
+    ApiErrorCode.chipAlreadyLinked =>
+      'Ese chip ya está vinculado a otra tarjeta. Usa un chip en blanco.',
     _ => error.message,
   };
 }

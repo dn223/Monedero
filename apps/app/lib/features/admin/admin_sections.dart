@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monedero_core/monedero_core.dart';
 
+import '../../card_reader/card_reader.dart';
+import '../../card_reader/nfc_card_reader.dart';
+import '../../card_reader/nfc_chip.dart';
 import '../../core/api/api_client.dart';
 import '../../core/format.dart';
 import '../../core/modules.dart';
@@ -94,6 +97,55 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
     showMessage(context, 'Tarjeta entregada: ya puede usarse en caja.');
   }
 
+  /// Graba la tarjeta en un chip NTAG215 (Fase 7, ADR 0017): lee el UID del
+  /// chip, la API vincula ese UID y firma, y la app escribe y verifica.
+  Future<void> _writeChip(Map<String, Object?> card) async {
+    final cardId = card['cardId']! as String;
+    try {
+      final written = await runWithChip(
+        context,
+        io: ref.read(nfcChipIoProvider),
+        title: 'Grabar chip',
+        message:
+            'Acerca un chip NTAG215 en blanco (o el de esta tarjeta) y no lo '
+            'retires hasta que termine.',
+        action: (tag) async {
+          final uid = ChipCardLayout.uidHex(tag.id);
+          if (uid == null) {
+            throw const CardReadException(
+              'Este chip no es compatible: se necesita un NTAG215.',
+            );
+          }
+          final linked = await ref
+              .read(adminSessionProvider.notifier)
+              .run(
+                (api, token) => api.post(
+                  '/v1/admin/cards/$cardId/chip',
+                  token: token,
+                  body: {'chipUid': uid},
+                ),
+              );
+          final credentials = CardCredentials.fromJson(
+            linked['credentials']! as Map<String, Object?>,
+          );
+          await writeChipCredentials(tag, credentials);
+          return credentials;
+        },
+      );
+      if (written == null || !mounted) return;
+      _refresh();
+      showMessage(
+        context,
+        'Chip grabado para ${card['cardholderName']}. El QR anterior deja '
+        'de servir; el titular ve el nuevo en su app.',
+      );
+    } on ApiException catch (error) {
+      if (mounted) showMessage(context, friendlyError(error));
+    } on CardReadException catch (error) {
+      if (mounted) showMessage(context, error.message);
+    }
+  }
+
   Future<void> _replace(Map<String, Object?> card) async {
     final ok = await confirm(
       context,
@@ -129,6 +181,8 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
   @override
   Widget build(BuildContext context) {
     final cards = ref.watch(adminCardsProvider(_query));
+    final nfc = ref.watch(nfcStatusProvider).value;
+    final canWriteChip = nfc != null && nfc != NfcStatus.unsupported;
     return PageList(
       children: [
         _SearchField(
@@ -151,6 +205,7 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
                     card: c,
                     onDeliver: () => _deliver(c),
                     onReplace: () => _replace(c),
+                    onWriteChip: canWriteChip ? () => _writeChip(c) : null,
                     onHistory: () => showDialog<void>(
                       context: context,
                       builder: (_) => _HistoryDialog(card: c),
@@ -173,12 +228,16 @@ class _CardRow extends StatelessWidget {
     required this.onDeliver,
     required this.onReplace,
     required this.onHistory,
+    this.onWriteChip,
   });
 
   final Map<String, Object?> card;
   final VoidCallback onDeliver;
   final VoidCallback onReplace;
   final VoidCallback onHistory;
+
+  /// Grabar el chip NFC; `null` si el dispositivo no tiene NFC.
+  final VoidCallback? onWriteChip;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +298,13 @@ class _CardRow extends StatelessWidget {
                     ),
                     onPressed: onReplace,
                     child: const Text('Reponer'),
+                  ),
+                if (onWriteChip != null &&
+                    (status == 'PENDING' || status == 'ACTIVE'))
+                  IconButton(
+                    tooltip: 'Grabar chip NFC',
+                    onPressed: onWriteChip,
+                    icon: const Icon(Icons.contactless_outlined),
                   ),
                 IconButton(
                   tooltip: 'Movimientos',

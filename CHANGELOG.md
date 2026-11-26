@@ -6,6 +6,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Fase 7: tarjetas físicas NFC con NTAG215 (2026-11-23)
+- Administración graba una tarjeta en un chip **NTAG215** desde la app Android (Tarjetas → **Grabar chip NFC**). La tarjeta adopta el UID real del chip y la API recalcula la firma: `POST /v1/admin/cards/{id}/chip`. Repetir con el mismo chip no cambia nada; un chip no puede ser de dos tarjetas (`CHIP_ALREADY_LINKED`).
+- La caja lee el chip con **NFC** (primera opción en teléfonos con NFC): UID del hardware, número y firma de la memoria; la API valida igual que con el QR. Copiar la memoria a otro chip no sirve porque cambia el UID.
+- `ChipCardLayout` en `core` (páginas 4–12: encabezado, número y firma). `NfcCardReader` reemplaza el esqueleto `NfcMifareCardReader`. Paquete `nfc_manager` 4.3.0; permiso NFC no obligatorio en Android. La app atiende `TECH_DISCOVERED` de NTAG215 para que Android no muestre "no hay aplicación" al dejar el chip cerca.
+- Migración `0007_card_chip_links.sql` (auditoría de cada vinculación, solo inserción). ADR 0017. API 0.9.0; app 0.8.0+8.
+- Pruebas: 5 de `core`, 4 de integración y 8 de la app (chip falso y hoja de lectura).
+
 ### Agregado — APK descargable desde el link (2026-11-19)
 - La API sirve el APK release de 64 bits en `/descargas/monedero.apk` (tipo `application/vnd.android.package-archive`, como adjunto; 404 si no se compiló) y la web muestra **Descargar app para Android** en la pantalla inicial. 2 pruebas nuevas de la API.
 

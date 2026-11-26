@@ -14,6 +14,25 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-23 — Integrante por confirmar — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`, que parte de `feat/observaciones-2`; sin push ni fusión):
+- Equipo nuevo preparado: Flutter 3.47.7 en `C:\src\flutter`, Git 2.55.0 y Docker Desktop. `tool/check.dart` en verde en `main` y en `feat/observaciones-2`.
+- Prueba de hardware: el **Redmi Note 15 Pro 5G** lee los llaveros **NTAG215** de un kit de duplicador (genéricos, "Non-genuine"); las tarjetas rectangulares del kit son de 125 kHz y ningún teléfono las lee.
+- **Fase 7 con NTAG215** (ADR 0017, *Propuesto*): administración graba el chip y la tarjeta adopta su UID (`POST /v1/admin/cards/{id}/chip`, migración `0007`, `CHIP_ALREADY_LINKED`); la caja lee con `NfcCardReader`. `ChipCardLayout` en `core`; paquete `nfc_manager` 4.3.0; permiso NFC no obligatorio.
+- Pruebas: 37 de `core`, 60 de la API y 18 de la app, en verde. API 0.9.0, app 0.8.0+8.
+
+**Pendiente:**
+- Probar el APK en el teléfono con los llaveros: grabar desde Administración y cobrar desde Caja. Hasta entonces la lectura y escritura real del chip no se ha probado (solo con un chip simulado en las pruebas).
+- Aprobación del ADR 0017 por el equipo; contraseña de escritura del chip (PWD/PACK); comprar tarjetas NTAG215 de 13.56 MHz.
+- Configurar la identidad de Git en este equipo antes de hacer commits.
+
+**Problemas conocidos:**
+- El APK de este equipo se firma con la llave de depuración (la llave oficial está en `~/.monedero/` de otro equipo): para instalarlo hay que desinstalar antes un APK firmado con la llave oficial.
+- Los NTAG215 genéricos suelen permitir cambiar el UID, así que un duplicador puede hacer una copia exacta (ADR 0017).
+
+---
+
 ## 2026-11-19 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/observaciones-2`):

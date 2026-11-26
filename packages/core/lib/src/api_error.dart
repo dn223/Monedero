@@ -72,6 +72,9 @@ enum ApiErrorCode {
   /// Administración desactivó el módulo de la aplicación que se usó.
   moduleDisabled('MODULE_DISABLED', 403),
 
+  /// El chip NFC ya está vinculado a otra tarjeta (su UID es único).
+  chipAlreadyLinked('CHIP_ALREADY_LINKED', 409),
+
   /// Error inesperado del servidor. Nunca expone detalles internos.
   internal('INTERNAL_ERROR', 500);
 

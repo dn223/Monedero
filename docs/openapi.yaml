@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Monedero API
-  version: 0.8.0
+  version: 0.9.0
   summary: API del monedero electrónico prepago de circuito cerrado (prototipo UFG).
   description: |
     Convenciones (ver docs/api.md):
@@ -417,6 +417,36 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/Card'}
         '409': {$ref: '#/components/responses/Error'}
+
+  /v1/admin/cards/{id}/chip:
+    post:
+      tags: [Administración]
+      operationId: linkCardChip
+      summary: Vincular un chip NFC NTAG215 a la tarjeta (ADR 0017)
+      description: >-
+        La tarjeta (`PENDING` o `ACTIVE`) adopta el UID del chip y su firma se
+        recalcula. Devuelve las credenciales que la app escribe en el chip.
+        Repetir con el mismo chip no cambia nada.
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chipUid]
+              properties:
+                chipUid: {type: string, pattern: '^[0-9A-Fa-f]{14}$', example: '04A1B2C3D4E5F6'}
+      responses:
+        '200':
+          description: Tarjeta con el UID del chip y su firma nueva.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Card'}
+        '400': {description: 'UID mal formado (`VALIDATION_FAILED`).', $ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {description: 'Chip de otra tarjeta (`CHIP_ALREADY_LINKED`) o tarjeta no vigente (`CARD_NOT_ACTIVE`).', $ref: '#/components/responses/Error'}
 
   /v1/admin/cards/{id}/replace:
     post:
@@ -1010,6 +1040,6 @@ components:
           properties:
             code:
               type: string
-              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, MODULE_DISABLED, TRANSACTION_ALREADY_REVERSED, TRANSACTION_NOT_REVERSIBLE, INTERNAL_ERROR]
+              enum: [VALIDATION_FAILED, UNAUTHORIZED, INVALID_CREDENTIALS, FORBIDDEN, TERMINAL_NOT_AUTHORIZED, DEMO_MODE_DISABLED, NOT_FOUND, CONFLICT, CARD_NOT_ACTIVE, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_REUSED, INVALID_AMOUNT, INSUFFICIENT_FUNDS, INVALID_CARD_SIGNATURE, PIN_REQUIRED, INVALID_PIN, INVALID_VERIFICATION_CODE, TOO_MANY_ATTEMPTS, RATE_LIMITED, MODULE_DISABLED, TRANSACTION_ALREADY_REVERSED, TRANSACTION_NOT_REVERSIBLE, CHIP_ALREADY_LINKED, INTERNAL_ERROR]
             message: {type: string}
             details: {type: object, additionalProperties: true}

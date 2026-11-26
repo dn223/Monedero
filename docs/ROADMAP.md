@@ -20,7 +20,7 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | 4 | App conectada a la API: inicio de sesión real de los 3 roles, titular (registro, saldo, historial, QR real, pérdida, PIN, pago con código de caja), caja (QR con cámara, lista demo, número, cobro con PIN, recarga y comprobante) | ✅ Terminada (pendiente de revisión) |
 | 5 | Administración conectada (tablero, emitir, entregar, reponer, buscar, conciliación, cajas, reiniciar demo) y endurecimiento: renovación de sesión con tokens rotativos y límite de solicitudes | ✅ Terminada (pendiente de revisión) |
 | 6 | App Android instalable (ícono propio, nombre provisional "Monedero", APK release firmado), web instalable (PWA) y exposición por link público (`tool/share.dart`) | ✅ Terminada (pendiente de revisión; falta probar el APK en varios celulares) |
-| 7 | Tarjetas físicas NFC: prueba de celulares, `NfcMifareCardReader`, emisión escribiendo el chip (alternativa NTAG215) | Pendiente (siguiente entrega) |
+| 7 | Tarjetas físicas NFC con **NTAG215** (ADR 0017): administración graba el chip (la tarjeta adopta su UID), la caja lo lee con `NfcCardReader` | 🔄 Código listo en `feat/fase-7-nfc`; falta probar el APK con los llaveros reales |
 | 8 | Producción: VPS Contabo, dominio, HTTPS con Caddy, PostgreSQL con respaldos pgBackRest → Backblaze B2, correo real, `DEMO_MODE=false`, monitoreo; el APK apunta a `https://<dominio>` | Pendiente (requiere aprobación del equipo: cuesta dinero) |
 
 ## Pendientes priorizados
@@ -37,7 +37,7 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | P0 | Llenar la tabla de responsables en `AGENTS.md` | Equipo |
 | P1 | **Nombre definitivo** de la app | Proceso en `NAMING.md`; el ícono se regenera desde `brand.dart` |
 | P1 | Probar compatibilidad MIFARE Classic de los teléfonos del equipo | `docs/nfc.md`, sección 5 |
-| P1 | **NFC real**: implementar `NfcMifareCardReader` y la emisión física | Depende de la prueba anterior; alternativa NTAG215 |
+| P1 | **NFC real** con NTAG215 | Implementado (ADR 0017); pendiente: prueba en el teléfono, contraseña de escritura del chip y comprar tarjetas NTAG215 de 13.56 MHz (las del kit del duplicador son de 125 kHz) |
 | P1 | Token de renovación en cookie `HttpOnly` para la web | Hoy vive en `localStorage` (ADR 0010) |
 | P1 | **Despliegue en Contabo** | Solo con aprobación del equipo; genera costo mensual |
 | P1 | **Respaldos** pgBackRest → Backblaze B2 y prueba de restauración | Junto con el despliegue |
@@ -48,6 +48,6 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 
 ## Teléfonos probados para NFC
 
-| Modelo | Android | NFC TagInfo | MIFARE Classic | Probado por |
-|---|---|---|---|---|
-| _por probar_ | | | | |
+| Modelo | Android | NFC TagInfo | MIFARE Classic | NTAG215 | Probado por |
+|---|---|---|---|---|---|
+| Redmi Note 15 Pro 5G | — | Lee llaveros NTAG215 genéricos ("Non-genuine") | Sin probar (no hay tarjetas MIFARE; las del kit son de 125 kHz) | ✅ Lee | Equipo, 2026-11-23 |

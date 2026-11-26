@@ -20,3 +20,4 @@ Un ADR por decisión técnica, con el formato de [0000-plantilla.md](0000-planti
 | [0014](0014-modulos-activables-y-asistente.md) | Módulos activables desde administración y asistente virtual por reglas | Aceptado |
 | [0015](0015-caja-con-codigo-y-sin-datos-de-ejemplo.md) | La caja entra con su código y la base empieza solo con administración | Aceptado |
 | [0016](0016-anulacion-tarjeta-nueva-y-perfil.md) | Anulación por contramovimiento, tarjeta nueva pedida por el titular y perfil | Aceptado |
+| [0017](0017-tarjetas-fisicas-ntag215.md) | Tarjetas físicas NTAG215 que adoptan el UID del chip | Propuesto |
