@@ -20,7 +20,7 @@ Prioridad: **P0** = necesario para la demostración · **P1** = después de la d
 | 4 | App conectada a la API: inicio de sesión real de los 3 roles, titular (registro, saldo, historial, QR real, pérdida, PIN, pago con código de caja), caja (QR con cámara, lista demo, número, cobro con PIN, recarga y comprobante) | ✅ Terminada (pendiente de revisión) |
 | 5 | Administración conectada (tablero, emitir, entregar, reponer, buscar, conciliación, cajas, reiniciar demo) y endurecimiento: renovación de sesión con tokens rotativos y límite de solicitudes | ✅ Terminada (pendiente de revisión) |
 | 6 | App Android instalable (ícono propio, nombre provisional "Monedero", APK release firmado), web instalable (PWA) y exposición por link público (`tool/share.dart`) | ✅ Terminada (pendiente de revisión; falta probar el APK en varios celulares) |
-| 7 | Tarjetas físicas NFC con **NTAG215** (ADR 0017): administración graba el chip (la tarjeta adopta su UID), la caja lo lee con `NfcCardReader` | 🔄 Código listo en `feat/fase-7-nfc`; falta probar el APK con los llaveros reales |
+| 7 | Tarjetas físicas NFC con **NTAG215** (ADR 0017): administración graba el chip (la tarjeta adopta su UID), la caja lo lee con `NfcCardReader` | 🔄 Código listo en `feat/fase-7-nfc`; grabar el chip y recargar probados en el Redmi (2026-11-25); faltan cobro, PIN y casos de error con el llavero |
 | 8 | Producción: VPS Contabo, dominio, HTTPS con Caddy, PostgreSQL con respaldos pgBackRest → Backblaze B2, correo real, `DEMO_MODE=false`, monitoreo; el APK apunta a `https://<dominio>` | Pendiente (requiere aprobación del equipo: cuesta dinero) |
 
 ## Pendientes priorizados

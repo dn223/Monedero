@@ -186,7 +186,7 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-11-23, fases 1 a 7 en ramas pendientes de revisión y fusión: `feat/fase-4-6-demo` → `feat/observaciones-2` → `feat/fase-7-nfc`):
+**Estado actual** (2026-11-25, fases 1 a 7 en ramas pendientes de revisión y fusión: `feat/fase-4-6-demo` → `feat/observaciones-2` → `feat/fase-7-nfc`):
 - Fases 1–2: monorepo, Docker Compose, `tool/`, CI; `core` (centavos, Luhn, firma HMAC); base con barreras (`0001`, `0002`); API completa con las 5 pruebas obligatorias.
 - Fase 4: la app habla con la API en los tres roles. Sesión por rol (`core/session/`), titular (`features/holder/`), caja (`features/cashier/` + `lib/card_reader/`), inicio de sesión común (`features/auth/`) con cuentas demo en modo demo. Las vistas de diseño de la Fase 3 se eliminaron.
 - Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
@@ -199,7 +199,7 @@ Y actualiza la sección 9 de este archivo.
 - Pruebas: 37 de `core`, 60 de la API y 18 de la app, todas en verde con `tool/check.dart`.
 
 **Siguientes pasos:**
-1. Probar la Fase 7 con el APK en el Redmi Note 15 Pro 5G y los llaveros NTAG215 (`docs/nfc.md` § 7). El ADR 0017 está como *Propuesto* hasta que el equipo lo apruebe.
+1. Fase 7 en el Redmi Note 15 Pro 5G (2026-11-25): grabar el chip y recargar ya funcionan; falta probar con el llavero el cobro, el PIN, `CHIP_ALREADY_LINKED` y un chip sin grabar (`docs/nfc.md` § 7). El ADR 0017 está como *Propuesto* hasta que el equipo lo apruebe.
 2. El equipo revisa y fusiona `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc`; ensayo de la exposición con `tool/share.dart`.
 3. Comprar tarjetas NTAG215 de 13.56 MHz (las del kit del duplicador son de 125 kHz). Pendiente técnico: contraseña de escritura del chip (PWD/PACK).
 4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.

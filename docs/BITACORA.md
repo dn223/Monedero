@@ -14,6 +14,25 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-25 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`):
+- `tool/check.dart` en verde y commit de la Fase 7 (`90a458f`).
+- Se descartó NFC en la web (Web NFC): el diseño original deja la lectura de tarjetas en la app Android y la web para administración y demo (ADR 0017 sin cambios).
+- **Prueba con el Redmi Note 15 Pro 5G y un llavero NTAG215** (APK release por USB con `adb reverse tcp:8080 tcp:8080`): Administración grabó el chip (`POST /v1/admin/cards/{id}/chip` → 200) y Caja hizo una recarga a esa tarjeta (201).
+- Link público con `tool/share.dart` y APK de 64 bits compilado con `API_BASE_URL` igual al link; descarga verificada por `/descargas/monedero.apk` (mismo SHA-256). Instalado en el Redmi apuntando al link, sin cable.
+
+**Pendiente:**
+- Faltó probar con el llavero: cobro, cobro con PIN (> $25), chip repetido (`CHIP_ALREADY_LINKED`), llavero sin grabar y conciliación en el tablero.
+- Aprobación del ADR 0017 por el equipo; revisión y fusión de las tres ramas.
+
+**Problemas conocidos:**
+- El link y el APK descargable dependen de que la laptop siga encendida con Docker e Internet; si el túnel se recrea, el link cambia (la app se reconfigura escaneando el QR, sin reinstalar). Para que funcione sin la laptop hace falta la Fase 8.
+- `adb reverse` se pierde al reconectar el cable; hay que volver a correrlo.
+- El APK de este equipo sigue firmado con la llave de depuración.
+
+---
+
 ## 2026-11-23 — Integrante por confirmar — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`, que parte de `feat/observaciones-2`; sin push ni fusión):
