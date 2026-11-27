@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Corregido — Grabar chip por el link (2026-11-27)
+- Grabar un llavero desde Administración fallaba con "Se perdió la conexión con el chip" al usar la app por el link público: la app esperaba la respuesta de la API con la conexión al chip abierta. Ahora son dos lecturas: primero el UID, luego la API con el chip liberado, y después la escritura y verificación. El mensaje de error incluye el código de Android para distinguir un chip retirado de uno protegido. Pendiente de probar en el celular.
+
 ### Agregado — Fase 7: tarjetas físicas NFC con NTAG215 (2026-11-23)
 - Administración graba una tarjeta en un chip **NTAG215** desde la app Android (Tarjetas → **Grabar chip NFC**). La tarjeta adopta el UID real del chip y la API recalcula la firma: `POST /v1/admin/cards/{id}/chip`. Repetir con el mismo chip no cambia nada; un chip no puede ser de dos tarjetas (`CHIP_ALREADY_LINKED`).
 - La caja lee el chip con **NFC** (primera opción en teléfonos con NFC): UID del hardware, número y firma de la memoria; la API valida igual que con el QR. Copiar la memoria a otro chip no sirve porque cambia el UID.

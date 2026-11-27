@@ -153,12 +153,14 @@ class PlatformNfcChipIo implements NfcChipIo {
             final chip = _AndroidChipTag.from(tag);
             final result = await onTag(chip);
             if (!done.isCompleted) done.complete(result);
-          } on PlatformException {
+          } on PlatformException catch (error) {
+            // El código de Android ayuda a distinguir un chip retirado de
+            // uno protegido contra escritura.
             if (!done.isCompleted) {
               done.completeError(
-                const CardReadException(
+                CardReadException(
                   'Se perdió la conexión con el chip. Mantenlo quieto '
-                  'e intenta de nuevo.',
+                  'e intenta de nuevo (${error.code}).',
                 ),
               );
             }
