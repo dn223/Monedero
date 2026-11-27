@@ -14,6 +14,52 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-10-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):
+- Observación del ingeniero (vía Fabio): el proyecto debe tener **módulos** que se activan y desactivan desde el sistema, por ejemplo un chatbot, y el backend debe hacerlo cumplir.
+- Migración `0004` (`app_modules`, `module_changes`), `AppModule` y `MODULE_DISABLED` en `core`, `ModuleService` en la API y verificación en cada ruta de módulo.
+- Asistente virtual por reglas para el titular (`POST /v1/assistant/messages`) con datos reales.
+- Pantalla **Administración → Módulos** y chat del asistente en la app; el titular oculta lo apagado.
+- Presentación de entrada (`docs/presentacion-intro.pdf`) con una diapositiva nueva de módulos y asistente; ahora son 6.
+- Pruebas: 3 de `core`, 7 unitarias del asistente, 6 de integración de módulos y 2 de widgets. ADR 0014 y documentación.
+
+- Sistema sin datos de prueba (ADR 0015): solo la cuenta de administración (contraseña en `.env`), caja que entra con el código que genera administración (migración `0005`), titulares que se registran, y sin la palabra "demo" en la app. Asistente apagado para la exposición.
+
+**Pendiente:**
+- El ingeniero quiere el proyecto **desplegado con una URL**: hoy es el link temporal de `tool/share.dart`; uno permanente necesita cuenta y aprobación del equipo.
+- Confirmar con el ingeniero cuáles son los "requerimientos adicionales" que pidió.
+- En la exposición, hablar de "módulos", no de "panel de administrador" (indicación de Fabio).
+
+**Problemas conocidos:**
+- El asistente solo entiende las preguntas previstas (saldo, movimientos, recargas, pagos, QR, PIN, pérdida, reposición).
+
+---
+
+## 2026-10-25 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):
+- Fases 4 y 5: la app quedó conectada a la API en los tres roles (inicio de sesión real con sesión guardada por rol; titular con registro, saldo, QR, pago con código, PIN, pérdida y buzón demo; caja con vínculo de terminal, lectura simulada por QR/lista/número, cobro con PIN, recarga y comprobante tipo ticket; administración con tablero y gráfico, tarjetas, titulares, cajas y reinicio de la demo).
+- API: renovación de sesión con tokens rotativos (migración `0003`), límite de solicitudes por minuto, códigos de correo visibles en modo demo, buzón demo, cajas demo por dispositivo, tablero de indicadores y reinicio de la demo por API.
+- Fase 6: APK release firmado (keystore en `C:\Users\alexi\.monedero\`, fuera de git), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `dart run tool/share.dart` abre un quick tunnel de Cloudflare en Docker.
+- Interfaz pulida con los skills `frontend-design` y `dataviz` (paleta del gráfico validada para daltonismo). Probada en el navegador a ancho de escritorio y de celular, en claro y oscuro, y por el link público.
+- Documento de la presentación del avance (`docs/monedero-doc.pdf`) actualizado a las fases 1 a 6, con capturas nuevas; la fuente HTML queda en `docs/presentacion/` para regenerarlo con Chrome.
+- (2026-10-27) Presentación de entrada de 5 diapositivas en PDF con el estilo de la app (`docs/presentacion-intro.pdf`): portada, qué es, arquitectura y reglas del dinero, lo que ya funciona, y paso al sistema en vivo.
+- Documentación: README con capturas, `docs/exposicion.md`, `docs/android.md`, demo desde la app, API/OpenAPI, base de datos, arquitectura, setup (versiones), pruebas, dominio, roadmap con plan de entregas, ADR 0010–0013. Se reparó la doble codificación de `CHANGELOG.md`.
+
+**Pendiente:**
+- Revisión del equipo y fusión a `main`; ensayo de la exposición.
+- Probar el APK en celulares reales (solo se compiló y se verificó la firma) y respaldar el keystore.
+- Fase 7 (NFC) en la siguiente entrega; Fase 8 (Contabo) solo con aprobación del equipo.
+
+**Problemas conocidos:**
+- El nombre del quick tunnel puede tardar uno o dos minutos en responder; `tool/share.dart` lo avisa.
+- Los quick tunnels de Cloudflare no garantizan disponibilidad; plan B en `docs/exposicion.md` (red local).
+- En la web los tokens viven en `localStorage` (aceptable para el prototipo; ver ADR 0010).
+- El APK universal pesa ≈70 MB; `--split-per-abi` lo reduce a ≈25 MB.
+
+---
+
 ## 2026-10-22 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo:**

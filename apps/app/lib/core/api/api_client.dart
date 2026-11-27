@@ -13,8 +13,16 @@ class ApiException implements Exception {
   /// Mensaje en español para mostrar al usuario.
   final String message;
 
-  /// Error estándar devuelto por la API, si lo hubo.
+  /// Error estándar devuelto por la API, si lo hubo. Es `null` cuando no
+  /// hubo respuesta (sin red, servidor apagado, tiempo agotado).
   final ApiError? apiError;
+
+  /// Código del error de la API, si lo hubo.
+  ApiErrorCode? get code => apiError?.code;
+
+  /// `true` si no hubo respuesta del servidor: la operación pudo o no haber
+  /// llegado, así que se reintenta con la **misma** `Idempotency-Key`.
+  bool get isNetwork => apiError == null;
 
   @override
   String toString() => 'ApiException: $message';
@@ -23,7 +31,7 @@ class ApiException implements Exception {
 /// Cliente HTTP de la API de Monedero.
 ///
 /// Toda operación que cambia saldo requiere conexión: este cliente nunca
-/// encola operaciones para enviarlas después.
+/// encola operaciones para enviarlas después (regla 12).
 class ApiClient {
   /// Crea el cliente para [baseUrl] usando [httpClient].
   ApiClient({required this.baseUrl, required http.Client httpClient})
@@ -43,24 +51,42 @@ class ApiClient {
     String path, {
     String? token,
     String? terminal,
-  }) => _send('GET', path, token: token, terminal: terminal);
+  }) => send('GET', path, token: token, terminal: terminal);
 
-  /// `POST` con cuerpo JSON. Si [idempotent] es `true`, agrega una
-  /// `Idempotency-Key` nueva (regla 5).
+  /// `POST` con cuerpo JSON.
+  ///
+  /// Para operaciones que cambian saldo, pasa [idempotencyKey] (regla 5):
+  /// genérala con [newIdempotencyKey] **una vez por operación** y reutilízala
+  /// si hay que reintentar tras un error de red.
   Future<Map<String, Object?>> post(
     String path, {
     Map<String, Object?> body = const {},
     String? token,
-    bool idempotent = false,
-  }) => _send(
+    String? terminal,
+    String? idempotencyKey,
+  }) => send(
     'POST',
     path,
     body: body,
     token: token,
-    key: idempotent ? newIdempotencyKey() : null,
+    terminal: terminal,
+    key: idempotencyKey,
   );
 
-  Future<Map<String, Object?>> _send(
+  /// `PUT` con cuerpo JSON.
+  Future<Map<String, Object?>> put(
+    String path, {
+    Map<String, Object?> body = const {},
+    String? token,
+  }) => send('PUT', path, body: body, token: token);
+
+  /// `DELETE`.
+  Future<Map<String, Object?>> delete(String path, {String? token}) =>
+      send('DELETE', path, token: token);
+
+  /// Envía la solicitud y convierte la respuesta en JSON o en
+  /// [ApiException].
+  Future<Map<String, Object?>> send(
     String method,
     String path, {
     Map<String, Object?>? body,
@@ -79,19 +105,28 @@ class ApiClient {
         });
       if (body != null) request.body = jsonEncode(body);
       response = await http.Response.fromStream(
-        await _http.send(request).timeout(const Duration(seconds: 8)),
+        await _http.send(request).timeout(const Duration(seconds: 15)),
       );
     } on Exception {
-      throw ApiException('No se pudo conectar con la API en $baseUrl.');
+      throw ApiException('No se pudo conectar con el servidor ($baseUrl).');
     }
     final Object? decoded;
     try {
       decoded = jsonDecode(utf8.decode(response.bodyBytes));
     } on FormatException {
-      throw ApiException('Respuesta inválida (HTTP ${response.statusCode}).');
+      throw ApiException(
+        'El servidor respondió algo inesperado (HTTP ${response.statusCode}).',
+        apiError: ApiError(
+          ApiErrorCode.internal,
+          'HTTP ${response.statusCode}',
+        ),
+      );
     }
     if (decoded is! Map<String, Object?>) {
-      throw const ApiException('Respuesta inesperada de la API.');
+      throw const ApiException(
+        'Respuesta inesperada del servidor.',
+        apiError: ApiError(ApiErrorCode.internal, 'Respuesta inesperada.'),
+      );
     }
     if (response.statusCode >= 400) {
       final error = ApiError.fromJson(decoded);

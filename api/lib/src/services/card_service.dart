@@ -122,8 +122,9 @@ class CardService {
     ];
   }
 
-  /// Paso 1 del reporte de pérdida: envía un código al correo del titular.
-  Future<void> startLossReport(String cardholderId, String cardId) async {
+  /// Paso 1 del reporte de pérdida: envía un código al correo del titular
+  /// y lo devuelve (la API solo lo muestra en modo demo).
+  Future<String> startLossReport(String cardholderId, String cardId) async {
     final card = await _requireOwner(cardId, cardholderId);
     if (card['status'] != 'ACTIVE' && card['status'] != 'PENDING') {
       throw const ApiException(
@@ -131,7 +132,7 @@ class CardService {
         'Esta tarjeta ya no se puede reportar.',
       );
     }
-    await auth.sendCode(
+    return auth.sendCode(
       cardholderId: cardholderId,
       email: card['email'] as String,
       purpose: 'REPORT_LOSS',
@@ -178,13 +179,17 @@ class CardService {
     return rows.map(cardJson).toList();
   }
 
-  /// Busca titulares por nombre o correo.
+  /// Busca titulares por nombre o correo, con su tarjeta vigente (la más
+  /// reciente que no fue repuesta), para saber si se le puede emitir una.
   Future<List<Map<String, Object?>>> searchCardholders(String q) async {
     final rows = await query(
       pool,
-      'SELECT id, full_name, email::text AS email, email_verified_at, created_at '
-      "FROM cardholders WHERE @q = '' OR full_name ILIKE '%' || @q || '%' "
-      "OR email::text ILIKE '%' || @q || '%' ORDER BY created_at DESC LIMIT 50",
+      'SELECT h.id, h.full_name, h.email::text AS email, h.email_verified_at, '
+      'c.id AS card_id, c.status AS card_status FROM cardholders h '
+      'LEFT JOIN LATERAL (SELECT id, status FROM cards WHERE cardholder_id = h.id '
+      "AND status <> 'REPLACED' ORDER BY created_at DESC LIMIT 1) c ON true "
+      "WHERE @q = '' OR h.full_name ILIKE '%' || @q || '%' "
+      "OR h.email::text ILIKE '%' || @q || '%' ORDER BY h.created_at DESC LIMIT 50",
       {'q': q.trim()},
     );
     return [
@@ -194,8 +199,69 @@ class CardService {
           'fullName': h['full_name'],
           'email': h['email'],
           'emailVerified': h['email_verified_at'] != null,
+          'currentCardId': h['card_id'],
+          'currentCardStatus': h['card_status'],
         },
     ];
+  }
+
+  /// Zona horaria de los reportes diarios del tablero.
+  static const reportTimeZone = 'America/El_Salvador';
+
+  /// Indicadores del tablero de administración: tarjetas por estado, saldo
+  /// en circulación y recargas/cobros por día de los últimos 14 días.
+  Future<Map<String, Object?>> stats() async {
+    final byStatus = await query(
+      pool,
+      'SELECT status, count(*)::int AS cards, '
+      'COALESCE(sum(balance_cents), 0)::bigint AS balance_cents '
+      'FROM cards GROUP BY status',
+    );
+    final counts = (await query(
+      pool,
+      'SELECT (SELECT count(*)::int FROM cardholders) AS cardholders, '
+      '(SELECT count(*)::int FROM terminals WHERE active) AS terminals, '
+      '(SELECT count(*)::int FROM transactions) AS transactions',
+    )).first;
+    final days = await query(
+      pool,
+      'SELECT d::date AS day, '
+      "COALESCE(sum(t.amount_cents) FILTER (WHERE t.type = 'TOP_UP'), 0)::bigint "
+      'AS top_up_cents, '
+      "COALESCE(sum(t.amount_cents) FILTER (WHERE t.type = 'DEBIT'), 0)::bigint "
+      'AS debit_cents, '
+      "count(t.id) FILTER (WHERE t.type IN ('TOP_UP', 'DEBIT'))::int AS operations "
+      'FROM generate_series((now() AT TIME ZONE @tz)::date - 13, '
+      "(now() AT TIME ZONE @tz)::date, interval '1 day') AS d "
+      'LEFT JOIN transactions t ON (t.created_at AT TIME ZONE @tz)::date = d::date '
+      'GROUP BY d ORDER BY d',
+      {'tz': reportTimeZone},
+    );
+    String isoDay(Object? value) =>
+        (value! as DateTime).toIso8601String().substring(0, 10);
+    return {
+      'cardsByStatus': {
+        for (final s in CardStatus.values) s.wireName: 0,
+        for (final r in byStatus) r['status'] as String: r['cards'],
+      },
+      'totalBalanceCents': byStatus.fold<int>(
+        0,
+        (s, r) => s + (r['balance_cents'] as int),
+      ),
+      'cardholders': counts['cardholders'],
+      'activeTerminals': counts['terminals'],
+      'transactions': counts['transactions'],
+      'timeZone': reportTimeZone,
+      'daily': [
+        for (final d in days)
+          {
+            'day': isoDay(d['day']),
+            'topUpCents': d['top_up_cents'],
+            'debitCents': d['debit_cents'],
+            'operations': d['operations'],
+          },
+      ],
+    };
   }
 
   /// Regla 7: saldo frente a suma de movimientos por tarjeta.

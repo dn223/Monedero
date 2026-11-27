@@ -54,7 +54,7 @@ Verificaciones sugeridas: búsqueda web, Google Play, registro de marcas del CNR
 ## 5. Lista de verificación para aplicar el nombre elegido
 
 - [ ] `apps/app/lib/brand/brand.dart`: `appName`, `tagline`, `seedColor` y logotipo.
-- [ ] Ícono de la app: `apps/app/android/app/src/main/res/mipmap-*/ic_launcher.png` y `apps/app/web/icons/*`, `apps/app/web/favicon.png`.
+- [ ] Ícono de la app: `apps/app/android/app/src/main/res/mipmap-*/ic_launcher.png` y `apps/app/web/icons/*`, `apps/app/web/favicon.png`. Se regeneran desde `brand.dart` con `cd apps/app && flutter test tool/icons/generate_icons_test.dart --update-goldens` (ver `docs/android.md`).
 - [ ] Etiqueta de Android: `android:label` en `apps/app/android/app/src/main/AndroidManifest.xml`.
 - [ ] Título web: `<title>` y `apple-mobile-web-app-title` en `apps/app/web/index.html`; `name`, `short_name` y colores en `apps/app/web/manifest.json`.
 - [ ] `README.md` (título y descripción).

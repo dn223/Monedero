@@ -1,0 +1,10 @@
+# Configuración de `dart test` para la API.
+#
+# Las pruebas de integración crean bases propias pero comparten el rol
+# `monedero_app` del PostgreSQL de Docker; se corre un archivo a la vez para
+# no modificar ese rol desde dos procesos al mismo tiempo.
+concurrency: 1
+
+tags:
+  integration:
+    timeout: 3x

@@ -15,6 +15,10 @@ Future<void> main(List<String> args) async {
   } else {
     ok('Usando el .env existente.');
   }
+  final added = syncEnvFile();
+  if (added.isNotEmpty) {
+    ok('Variables nuevas agregadas a .env: ${added.join(', ')}');
+  }
   final env = readEnv();
   final apiPort = env['API_PORT'] ?? '8080';
   final mailpitPort = env['MAILPIT_UI_PORT'] ?? '8025';
@@ -47,11 +51,16 @@ Future<void> main(List<String> args) async {
           stdout
             ..writeln()
             ..writeln('  API ............ http://localhost:$apiPort')
+            ..writeln(
+              '  App web ........ http://localhost:$apiPort '
+              '(si existe apps/app/build/web)',
+            )
             ..writeln('  Correos (Mailpit) http://localhost:$mailpitPort')
             ..writeln(
-              '  App web ........ cd apps/app && '
+              '  Web (desarrollo) cd apps/app && '
               'flutter run -d chrome --web-port 5000',
             )
+            ..writeln('  Link público ... dart run tool/share.dart')
             ..writeln('  Detener ........ dart run tool/down.dart');
           return;
         }

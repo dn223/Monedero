@@ -6,6 +6,7 @@ import 'config.dart';
 import 'errors.dart';
 import 'http/json.dart';
 import 'http/request.dart';
+import 'mailer.dart';
 import 'security.dart';
 import 'services/services.dart';
 
@@ -14,6 +15,16 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
   const holder = {Role.cardholder};
   const cashier = {Role.cashier, Role.admin};
   const admin = {Role.admin};
+
+  // Sesiones sin contraseña: solo con los datos de ejemplo sembrados.
+  void requireSampleData() {
+    if (!config.demoMode || !config.sampleData) {
+      throw const ApiException(
+        ApiErrorCode.demoModeDisabled,
+        'Las sesiones de ejemplo no están disponibles.',
+      );
+    }
+  }
 
   void requireDemo() {
     if (!config.demoMode) {
@@ -29,6 +40,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
   // --- Autenticación -------------------------------------------------------
   router
     ..post('/v1/auth/cardholders/register', (Request r) async {
+      await s.modules.require(AppModule.selfRegistration);
       final b = await readJson(r);
       return jsonResponse(
         await s.auth.registerCardholder(
@@ -57,6 +69,25 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         ),
       );
     })
+    ..post('/v1/auth/cardholders/resend-code', (Request r) async {
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.resendVerificationCode(requireString(b, 'email')),
+        status: 202,
+      );
+    })
+    // La caja entra solo con el código que le dio administración.
+    ..post('/v1/auth/terminals/login', (Request r) async {
+      final b = await readJson(r);
+      final t = await s.terminals.login(requireString(b, 'code'));
+      return jsonResponse({
+        ...await s.auth.cashierSession(t.cashierId, t.name),
+        'terminalToken': t.terminalToken,
+        'terminalId': t.terminalId,
+        'name': t.name,
+        'payCode': t.payCode,
+      });
+    })
     ..post('/v1/auth/staff/login', (Request r) async {
       final b = await readJson(r);
       return jsonResponse(
@@ -66,10 +97,29 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         ),
       );
     })
+    // Renovación de sesión: rota el token de renovación (ver ADR 0010).
+    ..post('/v1/auth/refresh', (Request r) async {
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.refresh(requireString(b, 'refreshToken')),
+      );
+    })
+    ..post('/v1/auth/logout', (Request r) async {
+      final b = await readJson(r);
+      await s.auth.logout(requireString(b, 'refreshToken'));
+      return jsonResponse({'loggedOut': true});
+    })
     // --- Titular -----------------------------------------------------------
     ..get('/v1/me/cards', (Request r) async {
       final p = auth(r, holder);
-      return jsonResponse({'items': await s.cards.cardsOf(p.id)});
+      final items = await s.cards.cardsOf(p.id);
+      // Sin el módulo de QR no viajan las credenciales que lo forman.
+      final qr = await s.modules.isEnabled(AppModule.cardQr);
+      return jsonResponse({
+        'items': [
+          for (final c in items) qr ? c : ({...c}..remove('credentials')),
+        ],
+      });
     })
     ..get('/v1/me/cards/<id>/transactions', (Request r, String id) async {
       final p = auth(r, holder);
@@ -79,8 +129,12 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     })
     ..post('/v1/me/cards/<id>/loss-reports', (Request r, String id) async {
       final p = auth(r, holder);
-      await s.cards.startLossReport(p.id, id);
-      return jsonResponse({'codeSent': true}, status: 202);
+      final code = await s.cards.startLossReport(p.id, id);
+      return jsonResponse({
+        'codeSent': true,
+        // Solo en modo demo: el código se ve en pantalla (ver ADR 0011).
+        if (config.demoMode) 'demoCode': code,
+      }, status: 202);
     })
     ..post('/v1/me/cards/<id>/loss-reports/confirm', (
       Request r,
@@ -94,6 +148,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     })
     ..put('/v1/me/pin', (Request r) async {
       final p = auth(r, holder);
+      await s.modules.require(AppModule.pinChange);
       final b = await readJson(r);
       await s.auth.changePin(
         p.id,
@@ -102,7 +157,41 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       );
       return jsonResponse({'changed': true});
     })
+    ..post('/v1/assistant/messages', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.assistant.reply(p.id, requireString(b, 'message')),
+      );
+    })
+    // --- Módulos -----------------------------------------------------------
+    // Público: la app decide qué mostrar incluso antes de iniciar sesión.
+    ..get('/v1/modules', (Request r) async {
+      return jsonResponse({'items': await s.modules.list()});
+    })
+    ..put('/v1/admin/modules/<key>', (Request r, String key) async {
+      final p = auth(r, admin);
+      final b = await readJson(r);
+      final enabled = b['enabled'];
+      if (enabled is! bool) {
+        throw const ApiException(
+          ApiErrorCode.validationFailed,
+          'El campo "enabled" debe ser true o false.',
+          details: {'field': 'enabled'},
+        );
+      }
+      return jsonResponse(
+        await s.modules.set(key, enabled: enabled, staffId: p.id),
+      );
+    })
     // --- Caja (rol + credencial de terminal) -------------------------------
+    ..get('/v1/cards/terminal', (Request r) async {
+      auth(r, cashier);
+      final terminalId = await s.terminals.authenticate(
+        r.headers['x-terminal-token'],
+      );
+      return jsonResponse(await s.terminals.describe(terminalId));
+    })
     ..post('/v1/cards/read', (Request r) async {
       auth(r, cashier);
       await s.terminals.authenticate(r.headers['x-terminal-token']);
@@ -215,6 +304,24 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       auth(r, admin);
       return jsonResponse({'items': await s.cards.transactions(id)});
     })
+    ..get('/v1/admin/stats', (Request r) async {
+      auth(r, admin);
+      return jsonResponse(await s.cards.stats());
+    })
+    ..post('/v1/admin/demo/reset', (Request r) async {
+      auth(r, admin);
+      requireDemo();
+      final reset = s.demoReset;
+      if (reset == null) {
+        throw const ApiException(
+          ApiErrorCode.conflict,
+          'El reinicio por API no está configurado en este servidor. '
+          'Usa dart run tool/reset_demo.dart.',
+        );
+      }
+      await reset.reset();
+      return jsonResponse({'reset': true});
+    })
     ..get('/v1/admin/reconciliation', (Request r) async {
       auth(r, admin);
       return jsonResponse(await s.cards.reconciliation());
@@ -252,18 +359,41 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     // Sesiones sin contraseña SOLO en modo demo (exposición). Con
     // DEMO_MODE=false responden 403.
     ..post('/v1/demo/cashier-session', (Request r) async {
-      requireDemo();
+      requireSampleData();
       return jsonResponse({
         ...await s.auth.demoStaffSession(Role.cashier),
         ...await s.terminals.demoTerminal(),
       });
     })
     ..post('/v1/demo/holder-session', (Request r) async {
-      requireDemo();
+      requireSampleData();
       final b = await readJson(r);
       return jsonResponse(
         await s.auth.demoHolderSession(requireString(b, 'email')),
       );
+    })
+    // Cada dispositivo de caja obtiene su propia "Caja demo N".
+    ..post('/v1/demo/terminals', (Request r) async {
+      requireDemo();
+      final p = auth(r, cashier);
+      return jsonResponse(await s.terminals.createDemo(p.id), status: 201);
+    })
+    // Buzón: los correos que recibió el titular (códigos y avisos), para
+    // quien prueba sin acceso a Mailpit.
+    ..get('/v1/demo/inbox', (Request r) async {
+      requireDemo();
+      final p = auth(r, holder);
+      final email = await s.auth.emailOf(p.id);
+      return jsonResponse({
+        'items': [
+          for (final m in s.outbox?.messagesFor(email) ?? const <SentMail>[])
+            {
+              'subject': m.subject,
+              'text': m.text,
+              'sentAt': m.sentAt.toUtc().toIso8601String(),
+            },
+        ],
+      });
     })
     ..get('/v1/demo/terminal-activity/<payCode>', (
       Request r,
@@ -278,6 +408,7 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
     // --- Pago del titular en caja -------------------------------------------
     ..post('/v1/me/payments', (Request r) async {
       final p = auth(r, holder);
+      await s.modules.require(AppModule.holderPayments);
       final key = requireIdempotencyKey(r);
       final b = await readJson(r);
       return jsonResponse(

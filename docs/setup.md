@@ -28,6 +28,7 @@ Verificadas el **2026-10-21** en pub.dev, Docker Hub y GitHub. Si instalas versi
 |---|---|---|
 | `postgres` | `17.11` | Base de datos |
 | `axllent/mailpit` | `v1.31.6` | Bandeja de correo local |
+| `cloudflare/cloudflared` | `2026.9.3` | Túnel del link público (perfil `compartir`, verificado en Docker Hub el 2026-10-25) |
 | `dart` | `3.13.6` | Compilar la API (etapa de construcción) |
 | `caddy` | `2.11.7` | Solo producción (`deploy/`) |
 
@@ -40,6 +41,11 @@ Verificadas el **2026-10-21** en pub.dev, Docker Hub y GitHub. Si instalas versi
 | `flutter_riverpod` | 3.4.3 | app |
 | `go_router` | 18.1.1 | app |
 | `http` | 1.6.0 | app |
+| `shared_preferences` | 2.5.6 | app (sesión por rol, URL del servidor, caja vinculada, último saldo) |
+| `qr_flutter` | 4.1.0 | app (QR de la tarjeta, de la caja y del link) |
+| `mobile_scanner` | 7.4.2 | app (escanear QR con la cámara; en la web solo con `https` o `localhost`) |
+| `qr` | 3.0.2 | raíz (QR del link en la consola de `tool/share.dart`) |
+| `shelf_static` | 1.2.0 | api (sirve el build web en el mismo origen) |
 | `cupertino_icons` | 2.0.0 | app (lo exige la compilación web) |
 | `meta` | 1.19.0 | core |
 | `crypto` | 3.0.7 | core, api (HMAC-SHA256, SHA-256) |
@@ -163,12 +169,18 @@ dart run tool/up.dart
 - API: <http://localhost:8080/health>
 - Correos (Mailpit): <http://localhost:8025>
 
-Abre la app web:
-```bash
-cd apps/app
-flutter run -d chrome --web-port 5000
-```
-El puerto **5000** importa: es el origen autorizado por CORS (`CORS_ALLOWED_ORIGINS` en `.env`).
+Abre la app web, de una de estas formas:
+
+- **Como en la exposición** (build release servido por la API): `cd apps/app && flutter build web` una vez y abre <http://localhost:8080>.
+- **Para desarrollar** (recarga en caliente):
+  ```bash
+  cd apps/app
+  flutter run -d chrome --web-port 5000
+  ```
+  El puerto **5000** importa: es el origen autorizado por CORS (`CORS_ALLOWED_ORIGINS` en `.env`).
+- **Link público** para otra persona: `dart run tool/share.dart` (ver [exposicion.md](exposicion.md)).
+
+`tool/up.dart` también agrega a `.env` las variables nuevas de `.env.example` (por ejemplo, las de una fase nueva) sin tocar las existentes.
 
 ---
 
@@ -181,6 +193,7 @@ La API escucha en el puerto 8080 de la laptop. Cómo llega la app depende del di
 | Emulador Android | `http://10.0.2.2:8080` (automática) | `flutter run` |
 | Teléfono por USB (**recomendado**) | `http://localhost:8080` vía `adb reverse` | ver abajo |
 | Teléfono por Wi-Fi | `http://<IP-de-la-laptop>:8080` | ver abajo |
+| Cualquier teléfono con Internet | el link de `tool/share.dart` | APK instalada: Servidor → escanear el QR ([android.md](android.md)) |
 
 ### Teléfono por USB con `adb reverse` (recomendado)
 No depende de la red ni del firewall.
@@ -210,7 +223,7 @@ No depende de la red ni del firewall.
    ```
    En macOS, acepta el aviso del firewall o revisa *Ajustes del Sistema → Red → Firewall*.
 
-> Las compilaciones *debug* permiten HTTP sin TLS (`usesCleartextTraffic` solo en los manifiestos `debug` y `profile`). En producción la API va por HTTPS con Caddy.
+> La URL también se puede cambiar dentro de la app, sin recompilar: pantalla inicial → ícono de servidor. La app permite HTTP sin TLS (`usesCleartextTraffic`) para la laptop y el emulador; el link del túnel y producción (Caddy) van por HTTPS.
 
 ---
 
@@ -226,7 +239,9 @@ No depende de la red ni del firewall.
 | El instalador de Docker falla con "no se encuentra la ruta" al lanzarse como administrador | Ruta del instalador demasiado larga | Copia el `.exe` a `C:\Temp` y ejecútalo de ahí |
 | `port is already allocated` en 5432/8080/8025 | Otro programa usa el puerto (por ejemplo, un PostgreSQL instalado) | Cambia `POSTGRES_PORT`/`API_PORT`/`MAILPIT_UI_PORT` en `.env` |
 | `flutter run -d chrome` falla con "Failed to establish connection with the application instance in Chrome" | El depurador no logra conectarse con Chrome (firewall o Chrome abierto desde otra herramienta) | Sirve la app sin depurador: `flutter run -d web-server --release --web-port 5000 --web-hostname localhost` y abre <http://localhost:5000> en tu navegador |
-| La app web dice "Sin conexión con la API" | La app no corre en el puerto 5000 o la API está apagada | `flutter run -d chrome --web-port 5000`; `dart run tool/up.dart` |
+| La app web dice "Sin conexión con el servidor" | La app no corre en el puerto 5000 o la API está apagada | `flutter run -d chrome --web-port 5000`; `dart run tool/up.dart` |
+| <http://localhost:8080> responde un JSON "Ruta no encontrada" | Falta el build web | `cd apps/app && flutter build web` |
+| `tool/share.dart` no imprime el link | Sin Internet o Cloudflare no respondió | `docker compose logs tunnel`; ver [exposicion.md](exposicion.md) |
 | El teléfono no llega a la API | Red aislada o firewall | Usa `adb reverse` (sección 5) |
 | `version solving failed … test_api` | Se subió `test` por encima de lo que fija Flutter | Mantén `test: ^1.31.1` hasta actualizar Flutter |
 | Acentos raros (`ConfiguraciÃ³n`) en la consola | Página de códigos antigua en PowerShell 5.1 | Usa Windows Terminal o ejecuta `chcp 65001` |

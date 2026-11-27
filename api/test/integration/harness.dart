@@ -8,13 +8,23 @@ import 'package:uuid/uuid.dart';
 /// Entorno de integración: base `monedero_test` recién creada y migrada en
 /// el PostgreSQL de Docker, API en memoria y correos en memoria.
 class Harness {
-  Harness._(this.config, this.owner, this.pool, this.mailer, this.handler);
+  Harness._(
+    this.config,
+    this.owner,
+    this.ownerConfig,
+    this.pool,
+    this.mailer,
+    this.handler,
+  );
 
   /// Configuración de prueba.
   final ApiConfig config;
 
   /// Conexión del dueño (para pruebas de la base y sembrado).
   final Connection owner;
+
+  /// Datos de conexión del dueño a la base de pruebas.
+  final DatabaseConfig ownerConfig;
 
   /// Pool con el usuario de la API (permisos mínimos).
   final Pool<void> pool;
@@ -25,8 +35,9 @@ class Harness {
   /// Manejador HTTP completo.
   final Handler handler;
 
-  /// Crea la base de pruebas desde cero.
-  static Future<Harness> start() async {
+  /// Crea la base de pruebas [database] desde cero. Cada archivo de pruebas
+  /// usa su propia base, porque `dart test` corre los archivos en paralelo.
+  static Future<Harness> start({String database = 'monedero_test'}) async {
     final env = loadEnv(findRepoEnv());
     final base = ApiConfig.fromEnvironment(env).database;
     final ownerCfg = base.copyWith(
@@ -34,15 +45,14 @@ class Harness {
       password: env['POSTGRES_OWNER_PASSWORD'] ?? '',
     );
     final admin = await openConnection(ownerCfg.copyWith(name: 'postgres'));
-    await admin.execute('DROP DATABASE IF EXISTS monedero_test WITH (FORCE)');
-    await admin.execute('CREATE DATABASE monedero_test');
+    await admin.execute('DROP DATABASE IF EXISTS $database WITH (FORCE)');
+    await admin.execute('CREATE DATABASE $database');
     await admin.close();
 
-    final owner = await openConnection(
-      ownerCfg.copyWith(name: 'monedero_test'),
-    );
+    final ownerDb = ownerCfg.copyWith(name: database);
+    final owner = await openConnection(ownerDb);
     final appDb = base.copyWith(
-      name: 'monedero_test',
+      name: database,
       password: env['POSTGRES_APP_PASSWORD'] ?? 'app-test-password',
     );
     final migrator = Migrator(owner, findMigrationsDir());
@@ -55,6 +65,7 @@ class Harness {
       jwtSecret: 'secreto-de-prueba-con-al-menos-32-caracteres',
       cardMasterKey: 'llave-maestra-de-prueba-de-32-caracteres!!',
       passwordHashRounds: 4,
+      sampleData: true,
     );
     await seedDemo(owner, config);
     final pool = openPool(
@@ -65,9 +76,14 @@ class Harness {
     final mailer = MemoryMailer();
     final handler = buildApiHandler(
       config,
-      services: Services(config, pool, mailer),
+      services: Services(
+        config,
+        pool,
+        mailer,
+        demoReset: DemoResetService(config, ownerDb, findMigrationsDir()),
+      ),
     );
-    return Harness._(config, owner, pool, mailer, handler);
+    return Harness._(config, owner, ownerDb, pool, mailer, handler);
   }
 
   /// Servicios con un inyector de fallas en la reposición.

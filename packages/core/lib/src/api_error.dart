@@ -60,6 +60,12 @@ enum ApiErrorCode {
   /// Endpoint de demo con el modo demo apagado.
   demoModeDisabled('DEMO_MODE_DISABLED', 403),
 
+  /// Demasiadas solicitudes desde el mismo cliente en un minuto.
+  rateLimited('RATE_LIMITED', 429),
+
+  /// Administración desactivó el módulo de la aplicación que se usó.
+  moduleDisabled('MODULE_DISABLED', 403),
+
   /// Error inesperado del servidor. Nunca expone detalles internos.
   internal('INTERNAL_ERROR', 500);
 

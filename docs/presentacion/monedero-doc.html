@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monedero doc</title>
+<!--
+  Fuente del documento de la presentación del avance (docs/monedero-doc.pdf).
+  Para regenerar el PDF, desde la raíz del repositorio (Windows):
+    "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu ^
+      --no-pdf-header-footer --print-to-pdf=docs\monedero-doc.pdf ^
+      docs\presentacion\monedero-doc.html
+  Las capturas viven en docs/img/.
+-->
+<style>
+  @page { size: letter; margin: 0.55in 0.7in; }
+  :root {
+    --ink: #1f2421;
+    --muted: #5b625e;
+    --green: #13734b;
+    --blue: #1f5fbf;
+    --orange: #c45f0a;
+    --line: #d9dfdb;
+    --head: #eef4f1;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .page { break-before: page; }
+  .cover { padding-top: 1.6in; }
+  .eyebrow { color: var(--green); font-weight: 700; letter-spacing: .06em; font-size: 10.5pt; margin: 0; }
+  h1 { color: var(--green); font-size: 26pt; line-height: 1.15; margin: 6px 0 4px; }
+  .subtitle { font-size: 13pt; margin: 0 0 28px; }
+  h2 { font-size: 17pt; margin: 0; padding-bottom: 4px; border-bottom: 3px solid currentColor; }
+  h2.p1 { color: var(--blue); } h2.p2 { color: var(--orange); } h2.p3 { color: var(--green); }
+  .speaker { color: var(--muted); font-size: 9pt; margin: 6px 0 14px; }
+  h3 { color: var(--green); font-size: 11.5pt; margin: 16px 0 4px; break-after: avoid; }
+  p { margin: 0 0 8px; }
+  ul { margin: 2px 0 8px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.2pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--head); font-weight: 700; }
+  table.narrow { width: 70%; }
+  .n1 { color: var(--blue); font-weight: 700; } .n2 { color: var(--orange); font-weight: 700; } .n3 { color: var(--green); font-weight: 700; }
+  .done { color: var(--green); font-weight: 700; }
+  .next { color: var(--orange); font-weight: 700; }
+  .small { color: var(--muted); font-size: 9pt; }
+  .new { display: inline-block; background: #e3f2ea; color: var(--green); font-size: 8pt; font-weight: 700; border-radius: 4px; padding: 0 5px; margin-left: 4px; vertical-align: 1px; }
+  .arch { display: flex; align-items: center; gap: 10px; margin: 8px 0 8px; break-inside: avoid; }
+  .arch .box { flex: 1; color: #fff; border-radius: 8px; padding: 8px 10px; text-align: center; line-height: 1.25; }
+  .arch .box b { display: block; font-size: 11pt; }
+  .arch .box span { font-size: 8.5pt; opacity: .9; }
+  .arch .arrow { color: var(--muted); font-size: 14pt; }
+  .b1 { background: #1d4e6e; } .b2 { background: #0e6e4f; } .b3 { background: #2e3a48; } .b4 { background: #8a4b12; }
+  pre {
+    background: #23262a; color: #e8ebe9; border-radius: 6px; padding: 10px 14px;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.6pt; line-height: 1.45;
+    margin: 8px 0 10px; white-space: pre-wrap; break-inside: avoid;
+  }
+  figure { margin: 6px 0 10px; break-inside: avoid; }
+  figure img { display: block; width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+  figcaption { text-align: center; color: var(--muted); font-size: 9pt; margin-top: 4px; }
+  .shots { display: grid; gap: 12px; align-items: start; break-inside: avoid; }
+  .shots.a { grid-template-columns: 2.5fr 1fr; }
+  .shots.b { grid-template-columns: 1fr 1fr; }
+  .callout { border-left: 4px solid var(--green); background: #f3f8f5; padding: 8px 12px; margin: 8px 0 10px; break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- Portada -->
+<section class="cover">
+  <p class="eyebrow">GESTIÓN DE LA CALIDAD DEL SOFTWARE · UFG</p>
+  <h1>Monedero doc</h1>
+  <p class="subtitle">Monedero electrónico prepago de circuito cerrado</p>
+  <p>Este documento resume qué es el proyecto, cómo está construido, cómo funciona el backend y cómo se usa la app en cada rol. Está dividido en tres partes para tres expositores (unos 3 minutos cada una) y termina con la demostración y los próximos pasos.</p>
+  <p><strong>Avance al 27 de octubre de 2026:</strong> fases 1 a 6 terminadas más las observaciones del ingeniero: <strong>módulos</strong> que se activan y desactivan desde el sistema (con un asistente virtual), y un sistema <strong>sin datos de prueba</strong>: una sola cuenta de administración, cajas que entran con su código y titulares que se registran. La app funciona de punta a punta en web y Android, y el ingeniero la prueba desde su celular con un link.</p>
+  <table class="narrow">
+    <tr><th>Parte</th><th>Tema</th></tr>
+    <tr><td class="n1">1</td><td>El proyecto, el stack y cómo se trabajó</td></tr>
+    <tr><td class="n2">2</td><td>El backend: API, reglas del dinero, módulos, seguridad y pruebas</td></tr>
+    <tr><td class="n3">3</td><td>La app en los tres roles, la demostración y los próximos pasos</td></tr>
+  </table>
+  <p class="small">Repositorio: github.com/dn223/Monedero · El link se genera el día de la exposición con <code>dart run tool/share.dart</code>.</p>
+</section>
+
+<!-- Parte 1 -->
+<section class="page">
+  <h2 class="p1">Parte 1 · El proyecto, el stack y cómo se trabajó</h2>
+  <p class="speaker">Expositor 1 · ≈ 3 minutos</p>
+
+  <h3>1.1 Qué es Monedero</h3>
+  <p>Una tarjeta prepago como la de un supermercado: se <strong>recarga en caja</strong> y se <strong>gasta solo dentro del comercio</strong> (circuito cerrado). Cada tarjeta tiene un número único de 16 dígitos y un saldo. Aunque es académico, se diseñó <strong>como si manejara dinero real</strong>: no se puede perder ni duplicar un centavo.</p>
+
+  <h3>1.2 Usuarios</h3>
+  <ul>
+    <li><strong>Titular:</strong> se registra, ve su saldo y su historial, <strong>paga desde el celular</strong> escribiendo el código de la caja, reporta la pérdida, cambia su PIN y pregunta al asistente.</li>
+    <li><strong>Caja:</strong> se abre con el código que le da administración; elige la tarjeta, cobra (con PIN si supera $25), recarga en múltiplos de $5 y entrega un comprobante.</li>
+    <li><strong>Administración:</strong> una sola cuenta; ve el tablero con el saldo en circulación, emite y repone tarjetas, crea las cajas, <strong>activa o desactiva módulos</strong> y revisa la conciliación.</li>
+  </ul>
+
+  <h3>1.3 Stack</h3>
+  <table>
+    <tr><th>Parte</th><th>Tecnología</th><th>Para qué</th></tr>
+    <tr><td>App</td><td>Flutter (Dart), Material 3, Riverpod, go_router</td><td>Una sola app: APK de Android y web instalable</td></tr>
+    <tr><td>API</td><td>Dart con shelf</td><td>Aplica las reglas y la seguridad; también sirve la app web</td></tr>
+    <tr><td>Base de datos</td><td>PostgreSQL 17</td><td>Única fuente de verdad del saldo</td></tr>
+    <tr><td>Código compartido</td><td>Paquete <em>core</em> en Dart</td><td>App y API validan igual</td></tr>
+    <tr><td>Entorno local</td><td>Docker Compose y Mailpit</td><td>Todo corre en la laptop con un comando, a costo $0</td></tr>
+    <tr><td>Exposición por link <span class="new">nuevo</span></td><td>Túnel de Cloudflare dentro de Docker</td><td>Un link <em>https</em> temporal, gratis y sin cuentas, para probar desde cualquier lugar</td></tr>
+    <tr><td>Producción (diseñada)</td><td>VPS Contabo, Caddy, pgBackRest a Backblaze B2</td><td>HTTPS y respaldos continuos</td></tr>
+    <tr><td>Tarjetas</td><td>Lista o número hoy · NFC MIFARE Classic en la Fase 7</td><td>Leer número, UID y firma</td></tr>
+  </table>
+
+  <h3>1.4 Arquitectura</h3>
+  <div class="arch">
+    <div class="box b1"><b>App Flutter</b><span>Android y web</span></div>
+    <div class="arrow">→</div>
+    <div class="box b2"><b>API en Dart</b><span>decide y valida</span></div>
+    <div class="arrow">→</div>
+    <div class="box b3"><b>PostgreSQL</b><span>guarda el saldo</span></div>
+  </div>
+  <p>La app nunca decide el saldo: envía cada operación a la API, que revisa las reglas, y PostgreSQL guarda el resultado y se protege a sí misma. Para la exposición, la misma laptop abre un túnel: el ingeniero entra por el link y la app y la API llegan por el mismo origen.</p>
+
+  <h3>1.5 Cómo se trabajó</h3>
+  <ul>
+    <li><strong>Monorepo</strong> con la app, la API, el paquete compartido, la base de datos y la documentación en un solo repositorio de <strong>GitHub</strong>.</li>
+    <li>Trabajo por <strong>fases</strong> con entregables verificables; cada fase termina con pruebas en verde, documentación y commit.</li>
+    <li>Ramas y Conventional Commits, integración continua (GitHub Actions corre análisis y pruebas en cada cambio).</li>
+    <li><strong>ADR</strong> (registro de decisiones técnicas): 15 hasta hoy; por ejemplo, PostgreSQL en lugar de Firestore, montos en centavos, exposición por link, módulos activables y caja con código.</li>
+    <li><strong>AGENTS.md</strong>: instrucciones únicas para que cada integrante trabaje con su propia IA sin romper las reglas; y una bitácora de sesiones.</li>
+  </ul>
+</section>
+
+<!-- Parte 2 -->
+<section class="page">
+  <h2 class="p2">Parte 2 · El backend: API, reglas del dinero, módulos, seguridad y pruebas</h2>
+  <p class="speaker">Expositor 2 · ≈ 3 minutos</p>
+
+  <h3>2.1 Reglas del dinero</h3>
+  <ul>
+    <li>Montos en <strong>centavos enteros</strong> (BIGINT / int), nunca decimales: evita errores de redondeo.</li>
+    <li>Recargas solo en <strong>múltiplos de $5</strong>; cobros mayores que cero y <strong>sin sobregiro</strong>; <strong>PIN</strong> si el cobro supera $25.</li>
+    <li>Solo una tarjeta <strong>ACTIVE</strong> puede recibir recargas o cobros (estados: PENDING, ACTIVE, BLOCKED, REPLACED).</li>
+    <li>Cada tarjeta lleva un <strong>UID</strong> y una <strong>firma HMAC</strong> que solo el servidor puede generar: nadie puede fabricar una tarjeta válida.</li>
+  </ul>
+
+  <h3>2.2 Cómo funciona un cobro</h3>
+  <p>La caja envía el cobro con una <strong>clave de idempotencia</strong>. La API valida el rol, la caja autorizada, la firma de la tarjeta y el monto. Dentro de una sola <strong>transacción</strong>, bloquea la tarjeta (<em>SELECT … FOR UPDATE</em>), revisa el saldo, lo actualiza y registra el movimiento. Si la red falla y la caja reintenta con la misma clave, recibe el mismo comprobante sin cobrar dos veces. El pago que hace el titular desde su celular con el código de la caja pasa exactamente por el mismo camino.</p>
+
+  <h3>2.3 Tres capas de protección</h3>
+  <ul>
+    <li><strong>App:</strong> valida para ayudar al usuario, pero no decide.</li>
+    <li><strong>API:</strong> es la autoridad (roles, firma, saldo, PIN, idempotencia).</li>
+    <li><strong>Base de datos:</strong> última barrera: <em>CHECK</em> que impide saldos negativos, movimientos de <strong>solo inserción</strong> (sin permisos de modificar y un trigger que lo bloquea) y una vista de <strong>conciliación</strong> (saldo = suma de movimientos).</li>
+  </ul>
+
+  <h3>2.4 Lo que expone la API</h3>
+  <table>
+    <tr><th>Rol</th><th>Operaciones</th></tr>
+    <tr><td>Público</td><td>Registro del titular, verificación del correo con código, inicio de sesión, <strong>apertura de la caja con su código</strong>, renovación y cierre de sesión, lista de módulos</td></tr>
+    <tr><td>Titular</td><td>Mis tarjetas, historial, <strong>pagar en caja con el código de 6 dígitos</strong>, reportar pérdida con código, cambiar PIN, <strong>asistente</strong></td></tr>
+    <tr><td>Caja</td><td>Leer tarjeta, recargar y cobrar (con credencial de la caja), <strong>su código de caja y sus últimos movimientos</strong></td></tr>
+    <tr><td>Administración</td><td>Tablero de indicadores, emitir y entregar tarjetas, reponer, buscar, conciliación, crear y revocar cajas, <strong>encender y apagar módulos</strong></td></tr>
+  </table>
+
+  <h3>2.5 Módulos y asistente virtual <span class="new">nuevo</span></h3>
+  <p>Desde <strong>Administración → Módulos</strong> se activa o desactiva cada parte de la app, al instante y para todos. <strong>El backend lo hace cumplir:</strong> con un módulo apagado la app oculta el botón y la API rechaza la operación (<em>MODULE_DISABLED</em>) aunque alguien la llame directamente. Cada cambio queda registrado con quién y cuándo.</p>
+  <table>
+    <tr><th>Módulo</th><th>Si se apaga…</th></tr>
+    <tr><td>Asistente virtual</td><td>Desaparece el botón "Asistente" y la API no responde preguntas</td></tr>
+    <tr><td>Registro de titulares</td><td>Nadie nuevo puede crear cuenta</td></tr>
+    <tr><td>Pago con código de caja</td><td>El titular ya no paga desde el celular; solo en caja</td></tr>
+    <tr><td>QR de la tarjeta</td><td>La API deja de enviar los datos que forman el QR</td></tr>
+    <tr><td>Cambio de PIN</td><td>El titular no puede cambiar su PIN desde la app</td></tr>
+  </table>
+  <p>Recargas, cobros, reporte de pérdida y reposición <strong>no se pueden apagar</strong>: protegen el dinero.</p>
+  <p><strong>Cómo funciona el asistente:</strong> el titular escribe una pregunta; la API revisa que el módulo esté activo, limpia el texto y busca palabras clave para saber de qué trata (saldo, movimientos, recargar, pagar, PIN, pérdida…); luego lee los <strong>datos reales</strong> del titular y responde con ellos ("Tu saldo es $12.65") con tres preguntas sugeridas. Funciona por reglas: sin inteligencia artificial externa, sin costo, sin enviar datos a terceros y sin guardar las conversaciones.</p>
+
+  <h3>2.6 Seguridad y acceso</h3>
+  <ul>
+    <li><strong>Sin cuentas de prueba:</strong> la base empieza con una sola cuenta de administración, cuya contraseña vive solo en el archivo <em>.env</em> del servidor.</li>
+    <li><strong>Caja con código:</strong> al crear una caja, administración recibe un código de 12 caracteres (por ejemplo K7M4-Q2XP-HT9W) que se muestra una sola vez; la base solo guarda su huella (SHA-256). Revocar la caja anula el código y su sesión al instante.</li>
+    <li><strong>Sesión que se renueva sola:</strong> el acceso dura 15 minutos y un token de renovación lo extiende sin pedir la contraseña; cada uso lo cambia por uno nuevo.</li>
+    <li><strong>Límite de solicitudes</strong> por minuto (más estricto al iniciar sesión) contra ataques de fuerza bruta.</li>
+    <li>Mientras no hay correo real, los códigos de verificación se muestran en la app y en "Correos recibidos"; además llegan a <strong>Mailpit</strong>, un buzón local que no envía nada a Internet.</li>
+  </ul>
+
+  <h3>2.7 Pruebas que demuestran el diseño</h3>
+  <p><strong>83 pruebas automáticas en verde</strong> (29 del paquete compartido, 46 de la API y 8 de la app). Las 5 obligatorias corren contra PostgreSQL real:</p>
+  <ul>
+    <li><strong>1,000 cobros simultáneos</strong> a la misma tarjeta: 400 aplicados, 600 rechazados por saldo, nunca saldo negativo y conciliación en cero.</li>
+    <li>La misma operación enviada <strong>5 veces</strong> se aplica <strong>una sola vez</strong>.</li>
+    <li>Una <strong>reposición con falla forzada</strong> a la mitad se revierte completa.</li>
+    <li>Intentar <strong>modificar o borrar</strong> un movimiento: la base lo rechaza.</li>
+    <li><strong>Firma inválida</strong> o UID cambiado: la operación se rechaza.</li>
+  </ul>
+  <p>Además hay pruebas de los módulos (cada módulo apagado cierra su ruta), el asistente, la caja con código (entra, cobra y deja de entrar al revocarla), la renovación de sesión, el límite de solicitudes y los flujos de la app.</p>
+</section>
+
+<!-- Parte 3 -->
+<section class="page">
+  <h2 class="p3">Parte 3 · La app, la demostración y próximos pasos</h2>
+  <p class="speaker">Expositor 3 · ≈ 3 minutos</p>
+
+  <h3>3.1 La app, ya conectada</h3>
+  <p>Una sola app con tema claro y oscuro que ahora trabaja con <strong>datos reales</strong> de la API, en la web y en el celular. Cada rol entra a su manera (titular con su cuenta, caja con su código, administración con su cuenta); en un mismo navegador pueden convivir las tres pestañas.</p>
+  <div class="shots a">
+    <figure><img src="../img/fase6-titular.jpg" alt="Pantalla del titular"><figcaption>Titular</figcaption></figure>
+    <figure><img src="../img/fase6-inicio-celular.jpg" alt="Pantalla inicial en un celular"><figcaption>Inicio (celular)</figcaption></figure>
+  </div>
+  <ul>
+    <li><strong>Titular:</strong> tarjeta virtual con su saldo, que se actualiza sola; <strong>Pagar en caja</strong> con el código de la caja; movimientos, cambiar PIN, reportar pérdida (la tarjeta se bloquea al instante) y el asistente cuando su módulo está activo.</li>
+    <li><strong>Caja:</strong> se abre solo con el código que da administración; elige la tarjeta de la lista de tarjetas activas o escribe su número (las tarjetas físicas con NFC llegan en la Fase 7); cobra con PIN si pasa de $25, recarga $5, $10, $20, $50 u otro múltiplo y entrega un <strong>comprobante tipo ticket</strong>. Muestra en grande su código de 6 dígitos para que el titular pague desde su app.</li>
+    <li><strong>Administración:</strong> tablero con el saldo en circulación, la conciliación ("Todo cuadra") y un gráfico de recargas y cobros de 14 días; emitir y entregar, reponer, crear y revocar cajas, y <strong>Módulos</strong>.</li>
+  </ul>
+  <div class="shots b">
+    <figure><img src="../img/fase6-caja.jpg" alt="Comprobante de recarga en la caja"><figcaption>Caja: comprobante</figcaption></figure>
+    <figure><img src="../img/fase6-admin.jpg" alt="Tablero de administración"><figcaption>Administración: tablero</figcaption></figure>
+  </div>
+
+  <h3>3.2 Demostración</h3>
+  <div class="callout">
+    El día de la exposición se corre <code>dart run tool/share.dart</code>: levanta todo e imprime un link <code>https://….trycloudflare.com</code> con su QR. El ingeniero lo abre en su celular, <strong>se registra como titular</strong> y administración le emite la tarjeta en vivo. Para Mailpit, en la laptop: <code>http://localhost:8025</code>.
+  </div>
+  <table>
+    <tr><th>Paso</th><th>Dónde</th><th>Resultado</th></tr>
+    <tr><td>1. Crear la caja</td><td>Administración → Cajas → Nueva caja</td><td>Código de la caja (anotarlo)</td></tr>
+    <tr><td>2. Abrir la caja</td><td>Caja → escribir el código</td><td>Caja lista, con su código de 6 dígitos</td></tr>
+    <tr><td>3. Registrar un titular</td><td>Celular → Titular → Créala (el código aparece en pantalla)</td><td>Cuenta verificada</td></tr>
+    <tr><td>4. Emitir la tarjeta</td><td>Administración → Titulares → Emitir → Entregar</td><td>La tarjeta aparece sola en el celular</td></tr>
+    <tr><td>5. Recargar $50</td><td>Caja → Elegir tarjeta de la lista → Recargar</td><td>Ticket, saldo $50.00 y correo del aviso</td></tr>
+    <tr><td>6. Cobrar $7.35 y $26</td><td>Caja → Cobrar (el de $26 pide el PIN)</td><td>Saldo $16.65</td></tr>
+    <tr><td>7. Sobregiro de $20</td><td>Caja → Cobrar</td><td>"Saldo insuficiente"; saldo intacto</td></tr>
+    <tr><td>8. Pagar desde el celular</td><td>Titular → Pagar en caja con el código de la caja</td><td>Pago aprobado al instante</td></tr>
+    <tr><td>9. Módulos</td><td>Administración → Módulos: activar el asistente, preguntar "¿Cuál es mi saldo?", volver a apagarlo</td><td>El backend activa y bloquea la función</td></tr>
+    <tr><td>10. Pérdida y reposición</td><td>Titular → Reportar pérdida; Administración → Tarjetas → Reponer</td><td>Bloqueada al instante; tarjeta nueva con el mismo saldo</td></tr>
+    <tr><td>11. Conciliación</td><td>Administración → Resumen</td><td>"Todo cuadra": diferencia $0.00</td></tr>
+  </table>
+  <table class="narrow">
+    <tr><th>Rol</th><th>Cómo entra</th></tr>
+    <tr><td>Administración</td><td>admin@monedero.local · contraseña en <em>ADMIN_PASSWORD</em> del archivo .env</td></tr>
+    <tr><td>Caja</td><td>El código que genera Administración → Cajas</td></tr>
+    <tr><td>Titular</td><td>Se registra en la app</td></tr>
+  </table>
+
+  <h3>3.3 Próximos pasos</h3>
+  <table>
+    <tr><th>Fase</th><th>Contenido</th><th>Estado</th></tr>
+    <tr><td>1–2</td><td>Estructura, base de datos, API y pruebas obligatorias</td><td class="done">Terminada</td></tr>
+    <tr><td>3</td><td>Vistas de diseño de los tres roles</td><td class="done">Terminada</td></tr>
+    <tr><td>4</td><td>Titular y caja conectados a la API: inicio de sesión, saldo real, QR real, lector de tarjetas, cobro, recarga y pago con código</td><td class="done">Terminada</td></tr>
+    <tr><td>5</td><td>Administración conectada, renovación de sesión y límite de solicitudes</td><td class="done">Terminada</td></tr>
+    <tr><td>6</td><td>APK de Android firmado con ícono propio, web instalable y link público para la exposición</td><td class="done">Terminada</td></tr>
+    <tr><td>Obs.</td><td>Observaciones del ingeniero: módulos con asistente, sistema sin datos de prueba y caja con código</td><td class="done">Terminada</td></tr>
+    <tr><td>7</td><td>Tarjetas físicas NFC (MIFARE Classic 1K)</td><td class="next">Siguiente entrega</td></tr>
+    <tr><td>8</td><td>Servidor en Contabo con HTTPS y respaldos continuos</td><td>Requiere aprobación del equipo (tiene costo)</td></tr>
+  </table>
+  <p><strong>Plan de entregas:</strong> esta entrega cierra las fases 1 a 6 y las observaciones recibidas; la siguiente trae la Fase 7 (tarjetas NFC); la entrega final incorpora las nuevas observaciones del ingeniero y el informe. Queda pendiente elegir el nombre definitivo de la app.</p>
+</section>
+
+</body>
+</html>

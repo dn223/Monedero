@@ -16,3 +16,4 @@ workspace:
 
 dev_dependencies:
   lints: ^6.1.0
+  qr: ^3.0.2
