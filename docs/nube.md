@@ -9,7 +9,7 @@ Claude Code puede trabajar en una máquina en la nube que clona este repositorio
    - **Acceso a la red:** *Limited* con **Allow package managers** (el valor por defecto).
    - **Setup script:** pega el contenido de [`tool/nube/instalar.sh`](../tool/nube/instalar.sh).
    - **Variables de entorno:** ninguna. No pegues tu `.env`.
-3. Abre una sesión con el repositorio `dn223/Monedero` y elige la rama de trabajo. `main` va atrasada.
+3. Abre una sesión con el repositorio `dn223/Monedero` en la rama `main`, que tiene las fases 1 a 7. Cada tarea nueva va en su propia rama (`feat/...`, `fix/...`) y entra a `main` por pull request.
 
 Desde el celular: pestaña **Code** de la app de Claude, mismo entorno y misma rama.
 

@@ -14,6 +14,23 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo:**
+- El ingeniero **aprobó el proyecto**; el equipo pasará a trabajar con un cliente.
+- Fusión en `main` del PR #1 (fases 4 a 6) y del PR #2 (observaciones del 18 de noviembre y Fase 7), con CI en verde. Las ramas no se borraron.
+- Preparación de la nube (`docs/nube.md`, `tool/nube/instalar.sh`) traída sobre `main`, y la presentación final de la exposición (`docs/presentacion-final.pdf`, fuente en `docs/presentacion/final-slides.html`).
+- Arreglo del grabado de chips por el link en la rama aparte `fix/nfc-grabado-dos-pasos`.
+
+**Pendiente:**
+- Crear el entorno en claude.ai/code con el setup script y medir cuánto tarda; probar Docker dentro del entorno.
+- Probar `fix/nfc-grabado-dos-pasos` con el celular.
+
+**Problemas conocidos:**
+- En la nube no hay Android SDK ni keystore: el APK se sigue compilando en la PC.
+
+---
+
 ## 2026-11-26 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`):

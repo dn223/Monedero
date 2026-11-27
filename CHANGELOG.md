@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Presentación final (2026-11-27)
+- `docs/presentacion-final.pdf` (8 diapositivas, fuente en `docs/presentacion/final-slides.html`): tarjetas NFC, observaciones atendidas, módulos y resultados.
+
 ### Agregado — Entorno en la nube (2026-11-24)
 - `tool/nube/instalar.sh` instala Flutter 3.47.7 en el entorno en la nube de Claude Code y `docs/nube.md` explica cómo usarlo.
 
