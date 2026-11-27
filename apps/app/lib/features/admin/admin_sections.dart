@@ -99,12 +99,17 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
 
   /// Graba la tarjeta en un chip NTAG215 (Fase 7, ADR 0017): lee el UID del
   /// chip, la API vincula ese UID y firma, y la app escribe y verifica.
+  ///
+  /// Son dos lecturas del chip: la llamada a la API ocurre entre ellas, con
+  /// el chip ya liberado. Por el link público esa llamada tarda lo
+  /// suficiente para que Android pierda una conexión que se queda abierta.
   Future<void> _writeChip(Map<String, Object?> card) async {
     final cardId = card['cardId']! as String;
+    final io = ref.read(nfcChipIoProvider);
     try {
-      final written = await runWithChip(
+      final uid = await runWithChip(
         context,
-        io: ref.read(nfcChipIoProvider),
+        io: io,
         title: 'Grabar chip',
         message:
             'Acerca un chip NTAG215 en blanco (o el de esta tarjeta) y no lo '
@@ -116,18 +121,31 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
               'Este chip no es compatible: se necesita un NTAG215.',
             );
           }
-          final linked = await ref
-              .read(adminSessionProvider.notifier)
-              .run(
-                (api, token) => api.post(
-                  '/v1/admin/cards/$cardId/chip',
-                  token: token,
-                  body: {'chipUid': uid},
-                ),
-              );
-          final credentials = CardCredentials.fromJson(
-            linked['credentials']! as Map<String, Object?>,
+          return uid;
+        },
+      );
+      if (uid == null || !mounted) return;
+      final linked = await ref
+          .read(adminSessionProvider.notifier)
+          .run(
+            (api, token) => api.post(
+              '/v1/admin/cards/$cardId/chip',
+              token: token,
+              body: {'chipUid': uid},
+            ),
           );
+      final credentials = CardCredentials.fromJson(
+        linked['credentials']! as Map<String, Object?>,
+      );
+      if (!mounted) return;
+      final written = await runWithChip(
+        context,
+        io: io,
+        title: 'Grabar chip',
+        message:
+            'Deja el mismo chip cerca: se están escribiendo los datos de la '
+            'tarjeta.',
+        action: (tag) async {
           await writeChipCredentials(tag, credentials);
           return credentials;
         },

@@ -14,6 +14,21 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `fix/nfc-grabado-dos-pasos`, desde `feat/fase-7-nfc`):
+- Exposición final aprobada por el ingeniero.
+- En el ensayo, grabar llaveros desde la app por el link fallaba siempre: la API respondía 200 (`POST /v1/admin/cards/{id}/chip`) y la escritura del chip fallaba después. NFC Tools sí escribe en esos llaveros (NTAG215 de NXP), así que el chip está bien.
+- Grabado en dos lecturas del chip, con la llamada a la API en medio, y código de Android en el mensaje de error. `tool/check.dart` en verde.
+
+**Pendiente:**
+- Probar el grabado con el celular y un llavero por el link. Si sigue fallando, el código de Android que ahora muestra el mensaje indica la causa.
+
+**Problemas conocidos:**
+- Ninguno nuevo.
+
+---
+
 ## 2026-11-26 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`):
