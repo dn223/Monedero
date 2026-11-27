@@ -49,6 +49,8 @@ void main() {
       'holder_payments',
       'card_qr',
       'pin_change',
+      'card_transfer',
+      'transaction_reversal',
     ]);
     expect(items.every((m) => m['enabled'] == true), isTrue);
     expect(items.first['name'], 'Asistente virtual');

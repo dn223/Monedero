@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monedero_core/monedero_core.dart';
 
+import '../../card_reader/card_reader.dart';
+import '../../card_reader/nfc_card_reader.dart';
+import '../../card_reader/nfc_chip.dart';
 import '../../core/api/api_client.dart';
 import '../../core/format.dart';
+import '../../core/modules.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/card_widgets.dart';
@@ -93,6 +97,55 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
     showMessage(context, 'Tarjeta entregada: ya puede usarse en caja.');
   }
 
+  /// Graba la tarjeta en un chip NTAG215 (Fase 7, ADR 0017): lee el UID del
+  /// chip, la API vincula ese UID y firma, y la app escribe y verifica.
+  Future<void> _writeChip(Map<String, Object?> card) async {
+    final cardId = card['cardId']! as String;
+    try {
+      final written = await runWithChip(
+        context,
+        io: ref.read(nfcChipIoProvider),
+        title: 'Grabar chip',
+        message:
+            'Acerca un chip NTAG215 en blanco (o el de esta tarjeta) y no lo '
+            'retires hasta que termine.',
+        action: (tag) async {
+          final uid = ChipCardLayout.uidHex(tag.id);
+          if (uid == null) {
+            throw const CardReadException(
+              'Este chip no es compatible: se necesita un NTAG215.',
+            );
+          }
+          final linked = await ref
+              .read(adminSessionProvider.notifier)
+              .run(
+                (api, token) => api.post(
+                  '/v1/admin/cards/$cardId/chip',
+                  token: token,
+                  body: {'chipUid': uid},
+                ),
+              );
+          final credentials = CardCredentials.fromJson(
+            linked['credentials']! as Map<String, Object?>,
+          );
+          await writeChipCredentials(tag, credentials);
+          return credentials;
+        },
+      );
+      if (written == null || !mounted) return;
+      _refresh();
+      showMessage(
+        context,
+        'Chip grabado para ${card['cardholderName']}. El QR anterior deja '
+        'de servir; el titular ve el nuevo en su app.',
+      );
+    } on ApiException catch (error) {
+      if (mounted) showMessage(context, friendlyError(error));
+    } on CardReadException catch (error) {
+      if (mounted) showMessage(context, error.message);
+    }
+  }
+
   Future<void> _replace(Map<String, Object?> card) async {
     final ok = await confirm(
       context,
@@ -128,6 +181,8 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
   @override
   Widget build(BuildContext context) {
     final cards = ref.watch(adminCardsProvider(_query));
+    final nfc = ref.watch(nfcStatusProvider).value;
+    final canWriteChip = nfc != null && nfc != NfcStatus.unsupported;
     return PageList(
       children: [
         _SearchField(
@@ -150,6 +205,7 @@ class _CardsSectionState extends ConsumerState<CardsSection> {
                     card: c,
                     onDeliver: () => _deliver(c),
                     onReplace: () => _replace(c),
+                    onWriteChip: canWriteChip ? () => _writeChip(c) : null,
                     onHistory: () => showDialog<void>(
                       context: context,
                       builder: (_) => _HistoryDialog(card: c),
@@ -172,12 +228,16 @@ class _CardRow extends StatelessWidget {
     required this.onDeliver,
     required this.onReplace,
     required this.onHistory,
+    this.onWriteChip,
   });
 
   final Map<String, Object?> card;
   final VoidCallback onDeliver;
   final VoidCallback onReplace;
   final VoidCallback onHistory;
+
+  /// Grabar el chip NFC; `null` si el dispositivo no tiene NFC.
+  final VoidCallback? onWriteChip;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +299,13 @@ class _CardRow extends StatelessWidget {
                     onPressed: onReplace,
                     child: const Text('Reponer'),
                   ),
+                if (onWriteChip != null &&
+                    (status == 'PENDING' || status == 'ACTIVE'))
+                  IconButton(
+                    tooltip: 'Grabar chip NFC',
+                    onPressed: onWriteChip,
+                    icon: const Icon(Icons.contactless_outlined),
+                  ),
                 IconButton(
                   tooltip: 'Movimientos',
                   onPressed: onHistory,
@@ -258,22 +325,68 @@ class _HistoryDialog extends ConsumerWidget {
 
   final Map<String, Object?> card;
 
+  /// Anulación por contramovimiento (módulo, ADR 0016): pide el motivo,
+  /// confirma y llama a la API con una `Idempotency-Key` propia.
+  Future<void> _reverse(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, Object?> t,
+  ) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => _ReverseDialog(item: t),
+    );
+    if (reason == null || !context.mounted) return;
+    final key = ApiClient.newIdempotencyKey();
+    final result = await _adminAction(
+      context,
+      ref,
+      (api, token) => api.post(
+        '/v1/admin/transactions/${t['transactionId']}/reversals',
+        token: token,
+        idempotencyKey: key,
+        body: {'reason': reason},
+      ),
+    );
+    if (result == null || !context.mounted) return;
+    ref
+      ..invalidate(adminCardTransactionsProvider(card['cardId']! as String))
+      ..invalidate(adminStatsProvider)
+      ..invalidate(reconciliationProvider);
+    showMessage(
+      context,
+      'Movimiento anulado. Saldo de la tarjeta: '
+      '${Money.format(result['balanceAfterCents']! as int)}.',
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tx = ref.watch(
       adminCardTransactionsProvider(card['cardId']! as String),
     );
+    final canReverse = ref.watch(
+      moduleOnProvider(AppModule.transactionReversal),
+    );
     return AlertDialog(
       title: Text('Movimientos de ${card['numberMasked']}'),
       content: SizedBox(
-        width: 460,
+        width: 520,
         child: switch (tx) {
           AsyncValue(:final value?) when value.isEmpty => const Text(
             'Esta tarjeta no tiene movimientos.',
           ),
           AsyncValue(:final value?) => ListView(
             shrinkWrap: true,
-            children: [for (final t in value) TransactionTile(t)],
+            children: [
+              for (final t in value)
+                TransactionTile(
+                  t,
+                  onReverse: canReverse
+                      ? () => _reverse(context, ref, t)
+                      : null,
+                ),
+            ],
           ),
           AsyncValue(:final error?) => ErrorPanel(error),
           _ => const LinearProgressIndicator(),
@@ -523,6 +636,79 @@ class TerminalsSection extends ConsumerWidget {
           ),
           _ => const LinearProgressIndicator(),
         },
+      ],
+    );
+  }
+}
+
+/// Pide el motivo de la anulación (mínimo 5 caracteres).
+class _ReverseDialog extends StatefulWidget {
+  const _ReverseDialog({required this.item});
+
+  final Map<String, Object?> item;
+
+  @override
+  State<_ReverseDialog> createState() => _ReverseDialogState();
+}
+
+class _ReverseDialogState extends State<_ReverseDialog> {
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final type = widget.item['type']! as String;
+    final amount = Money.format(widget.item['amountCents']! as int);
+    final refund = type == 'DEBIT';
+    return AlertDialog(
+      title: const Text('Anular movimiento'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              refund
+                  ? 'Se devolverán $amount a la tarjeta.'
+                  : 'Se retirarán $amount de la tarjeta (solo si alcanza el '
+                        'saldo).',
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'El movimiento original no se borra: se registra un '
+              'contramovimiento y queda en la auditoría.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _reason,
+              autofocus: true,
+              maxLength: 200,
+              decoration: const InputDecoration(
+                labelText: 'Motivo',
+                hintText: 'Ej. cobro duplicado por error',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _reason.text.trim().length >= 5
+              ? () => Navigator.of(context).pop(_reason.text.trim())
+              : null,
+          child: const Text('Anular'),
+        ),
       ],
     );
   }

@@ -36,13 +36,13 @@ Demuestran que la arquitectura protege el dinero aunque haya concurrencia, reint
 | 4 | `UPDATE` o `DELETE` de un movimiento | Rechazado por permisos (usuario de la API, error 42501) **y** por trigger (dueño del esquema) | 6 | ✅ |
 | 5 | Firma inválida o UID cambiado | `INVALID_CARD_SIGNATURE` y el saldo no cambia | 10 | ✅ |
 
-## 4. Estado actual (Fase 6)
+## 4. Estado actual (2026-11-18)
 
 | Paquete | Pruebas | Resultado |
 |---|---|---|
-| `packages/core` | 22 (Luhn, montos, formato, firma, errores, QR de tarjeta, vínculo de caja y URL del servidor) | ✅ |
-| `api` | 31 (unitarias de rutas, CORS, límite de solicitudes y app web; integración: las 5 obligatorias, reglas de caja, renovación y cierre de sesión, códigos y buzón demo, cajas demo, tablero, búsqueda y reinicio de la demo) | ✅ |
-| `apps/app` | 6 (inicio, sin servidor, inicio de sesión del titular, renovación automática de sesión, cobro en caja con comprobante, tablero de administración) | ✅ |
+| `packages/core` | 32 (anulación y módulos nuevos; Luhn, montos, formato, firma, errores, QR de tarjeta, vínculo de caja y URL del servidor) | ✅ |
+| `api` | 56 (descarga del APK, anulación por contramovimiento, tarjeta nueva y perfil; unitarias de rutas, CORS, límite de solicitudes y app web; integración: las 5 obligatorias, reglas de caja, renovación y cierre de sesión, códigos y buzón demo, cajas demo, tablero, búsqueda y reinicio de la demo) | ✅ |
+| `apps/app` | 10 (anulación en el historial; inicio, sin servidor, inicio de sesión del titular, renovación automática de sesión, cobro en caja con comprobante, tablero de administración) | ✅ |
 
 Además se probó a mano la app publicada (build release servido por la API) a ancho de escritorio y de celular, en tema claro y oscuro, y por el link público del túnel: inicio de sesión de los tres roles, recarga, cobro con PIN, saldo insuficiente, ticket, tablero y gráfico.
 

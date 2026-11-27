@@ -146,6 +146,76 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
         await s.cards.confirmLossReport(p.id, id, requireString(b, 'code')),
       );
     })
+    // --- Tarjeta nueva con traslado de saldo (módulo, ADR 0016) -------------
+    ..post('/v1/me/cards/<id>/card-requests', (Request r, String id) async {
+      final p = auth(r, holder);
+      await s.modules.require(AppModule.cardTransfer);
+      final code = await s.replacements.startCardRequest(p.id, id);
+      return jsonResponse({
+        'codeSent': true,
+        if (config.demoMode) 'demoCode': code,
+      }, status: 202);
+    })
+    ..post('/v1/me/cards/<id>/card-requests/confirm', (
+      Request r,
+      String id,
+    ) async {
+      final p = auth(r, holder);
+      await s.modules.require(AppModule.cardTransfer);
+      final key = requireIdempotencyKey(r);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.replacements.confirmCardRequest(
+          cardholderId: p.id,
+          cardId: id,
+          code: requireString(b, 'code'),
+          idempotencyKey: key,
+        ),
+        status: 201,
+      );
+    })
+    // --- Perfil del titular ---------------------------------------------------
+    ..get('/v1/me/profile', (Request r) async {
+      final p = auth(r, holder);
+      return jsonResponse(await s.auth.profile(p.id));
+    })
+    ..put('/v1/me/profile', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.updateName(p.id, requireString(b, 'fullName')),
+      );
+    })
+    ..put('/v1/me/password', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      await s.auth.changePassword(
+        p.id,
+        requireString(b, 'currentPassword'),
+        requireString(b, 'newPassword'),
+      );
+      return jsonResponse({'changed': true});
+    })
+    ..post('/v1/me/email-change', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      final code = await s.auth.startEmailChange(
+        p.id,
+        requireString(b, 'newEmail'),
+        requireString(b, 'password'),
+      );
+      return jsonResponse({
+        'codeSent': true,
+        if (config.demoMode) 'demoCode': code,
+      }, status: 202);
+    })
+    ..post('/v1/me/email-change/confirm', (Request r) async {
+      final p = auth(r, holder);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.auth.confirmEmailChange(p.id, requireString(b, 'code')),
+      );
+    })
     ..put('/v1/me/pin', (Request r) async {
       final p = auth(r, holder);
       await s.modules.require(AppModule.pinChange);
@@ -289,6 +359,18 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
       auth(r, admin);
       return jsonResponse(await s.cards.deliver(id));
     })
+    // Tarjeta física NFC (Fase 7, ADR 0017): adopta el UID del chip.
+    ..post('/v1/admin/cards/<id>/chip', (Request r, String id) async {
+      final p = auth(r, admin);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.cards.linkChip(
+          cardId: id,
+          chipUid: requireString(b, 'chipUid'),
+          adminId: p.id,
+        ),
+      );
+    })
     ..post('/v1/admin/cards/<id>/replace', (Request r, String id) async {
       final p = auth(r, admin);
       return jsonResponse(
@@ -296,6 +378,25 @@ void addBusinessRoutes(Router router, ApiConfig config, Services s) {
           oldCardId: id,
           adminId: p.id,
           idempotencyKey: requireIdempotencyKey(r),
+        ),
+        status: 201,
+      );
+    })
+    // Anulación por contramovimiento (módulo, ADR 0016).
+    ..post('/v1/admin/transactions/<id>/reversals', (
+      Request r,
+      String id,
+    ) async {
+      final p = auth(r, admin);
+      await s.modules.require(AppModule.transactionReversal);
+      final key = requireIdempotencyKey(r);
+      final b = await readJson(r);
+      return jsonResponse(
+        await s.reversals.reverse(
+          transactionId: id,
+          reason: requireString(b, 'reason'),
+          adminId: p.id,
+          idempotencyKey: key,
         ),
         status: 201,
       );

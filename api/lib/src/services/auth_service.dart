@@ -312,13 +312,21 @@ class AuthService {
     required String purpose,
     required String subject,
     String? cardId,
+    String? newEmail,
   }) async {
     final code = randomCode();
     await query(
       pool,
       'INSERT INTO verification_codes (cardholder_id, purpose, card_id, '
-      "code_hash, expires_at) VALUES (@h:uuid, @p, @c:uuid, @x, now() + interval '10 minutes')",
-      {'h': cardholderId, 'p': purpose, 'c': cardId, 'x': sha256Hex(code)},
+      'code_hash, new_email, expires_at) VALUES (@h:uuid, @p, @c:uuid, @x, '
+      "@ne, now() + interval '10 minutes')",
+      {
+        'h': cardholderId,
+        'p': purpose,
+        'c': cardId,
+        'x': sha256Hex(code),
+        'ne': newEmail,
+      },
     );
     await mailer.send(
       to: email,
@@ -331,7 +339,8 @@ class AuthService {
   }
 
   /// Valida el código más reciente de [purpose]; aplica límite de intentos.
-  Future<void> consumeCode({
+  /// Devuelve el correo nuevo guardado con el código (solo `CHANGE_EMAIL`).
+  Future<String?> consumeCode({
     required String cardholderId,
     required String purpose,
     required String code,
@@ -339,7 +348,8 @@ class AuthService {
   }) async {
     final rows = await query(
       pool,
-      'SELECT id, code_hash, attempts, (expires_at < now()) AS expired '
+      'SELECT id, code_hash, attempts, new_email::text AS new_email, '
+      '(expires_at < now()) AS expired '
       'FROM verification_codes WHERE cardholder_id = @h:uuid AND purpose = @p '
       'AND consumed_at IS NULL AND card_id IS NOT DISTINCT FROM @c:uuid '
       'ORDER BY created_at DESC LIMIT 1',
@@ -374,6 +384,144 @@ class AuthService {
       'UPDATE verification_codes SET consumed_at = now() WHERE id = @id:uuid',
       {'id': row['id']},
     );
+    return row['new_email'] as String?;
+  }
+
+  /// Datos del perfil del titular.
+  Future<Map<String, Object?>> profile(String cardholderId) async {
+    final row = (await query(
+      pool,
+      'SELECT id, full_name, email::text AS email, created_at FROM cardholders '
+      'WHERE id = @id:uuid',
+      {'id': cardholderId},
+    )).firstOrNull;
+    if (row == null) {
+      throw const ApiException(ApiErrorCode.notFound, 'Titular no encontrado.');
+    }
+    return {
+      'cardholderId': row['id'],
+      'fullName': row['full_name'],
+      'email': row['email'],
+      'createdAt': (row['created_at'] as DateTime).toUtc().toIso8601String(),
+    };
+  }
+
+  /// Cambia el nombre del titular.
+  Future<Map<String, Object?>> updateName(
+    String cardholderId,
+    String fullName,
+  ) async {
+    final name = fullName.trim();
+    if (name.length < 3 || name.length > 120) {
+      throw const ApiException(
+        ApiErrorCode.validationFailed,
+        'El nombre debe tener entre 3 y 120 caracteres.',
+        details: {'field': 'fullName'},
+      );
+    }
+    await query(
+      pool,
+      'UPDATE cardholders SET full_name = @n WHERE id = @id:uuid',
+      {'n': name, 'id': cardholderId},
+    );
+    return profile(cardholderId);
+  }
+
+  /// Cambia la contraseña verificando la actual.
+  Future<void> changePassword(
+    String cardholderId,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    if (newPassword.length < 8) {
+      throw const ApiException(
+        ApiErrorCode.validationFailed,
+        'La contraseña nueva debe tener al menos 8 caracteres.',
+        details: {'field': 'newPassword'},
+      );
+    }
+    await _requirePassword(cardholderId, currentPassword);
+    await query(
+      pool,
+      'UPDATE cardholders SET password_hash = @h WHERE id = @id:uuid',
+      {'h': hasher.hash(newPassword), 'id': cardholderId},
+    );
+  }
+
+  /// Paso 1 del cambio de correo: con la contraseña correcta envía un código
+  /// al **correo nuevo** y lo devuelve (la API solo lo muestra en modo demo).
+  Future<String> startEmailChange(
+    String cardholderId,
+    String newEmail,
+    String password,
+  ) async {
+    final email = newEmail.trim().toLowerCase();
+    if (!_emailPattern.hasMatch(email)) {
+      throw const ApiException(
+        ApiErrorCode.validationFailed,
+        'Escribe un correo válido.',
+        details: {'field': 'newEmail'},
+      );
+    }
+    await _requirePassword(cardholderId, password);
+    final taken = await _holderByEmail(email);
+    if (taken != null) {
+      throw const ApiException(
+        ApiErrorCode.conflict,
+        'Ya existe una cuenta con ese correo.',
+      );
+    }
+    return sendCode(
+      cardholderId: cardholderId,
+      email: email,
+      purpose: 'CHANGE_EMAIL',
+      newEmail: email,
+      subject: 'Confirma tu correo nuevo',
+    );
+  }
+
+  /// Paso 2: con el código correcto el correo nuevo reemplaza al anterior.
+  Future<Map<String, Object?>> confirmEmailChange(
+    String cardholderId,
+    String code,
+  ) async {
+    final email = await consumeCode(
+      cardholderId: cardholderId,
+      purpose: 'CHANGE_EMAIL',
+      code: code,
+    );
+    try {
+      await query(
+        pool,
+        'UPDATE cardholders SET email = @e, email_verified_at = now() '
+        'WHERE id = @id:uuid',
+        {'e': email, 'id': cardholderId},
+      );
+    } on Object catch (error) {
+      if (!isUniqueViolation(error)) rethrow;
+      throw const ApiException(
+        ApiErrorCode.conflict,
+        'Ya existe una cuenta con ese correo.',
+      );
+    }
+    return profile(cardholderId);
+  }
+
+  Future<void> _requirePassword(String cardholderId, String password) async {
+    final row = (await query(
+      pool,
+      'SELECT password_hash FROM cardholders WHERE id = @id:uuid',
+      {'id': cardholderId},
+    )).firstOrNull;
+    if (row == null ||
+        !hasher.verify(password, row['password_hash'] as String)) {
+      // 400 y no 401: un 401 haría que la app cierre la sesión.
+      throw const ApiException(
+        ApiErrorCode.validationFailed,
+        'La contraseña actual no es correcta.',
+        details: {'field': 'currentPassword'},
+      );
+    }
   }
 
   /// Lanza error si [pin] no son exactamente 4 dígitos.

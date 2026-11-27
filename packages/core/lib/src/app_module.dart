@@ -1,7 +1,10 @@
 /// Para quién es visible un módulo.
 enum ModuleAudience {
   /// App del titular.
-  cardholder('CARDHOLDER', 'Titular');
+  cardholder('CARDHOLDER', 'Titular'),
+
+  /// Administración.
+  admin('ADMIN', 'Administración');
 
   const ModuleAudience(this.wireName, this.label);
 
@@ -59,9 +62,31 @@ enum AppModule {
     'pin_change',
     'Cambio de PIN',
     r'El titular cambia el PIN que pide la caja en compras de más de $25.',
+  ),
+
+  /// Tarjeta nueva pedida por el titular, con traslado de todo el saldo.
+  cardTransfer(
+    'card_transfer',
+    'Tarjeta nueva con traslado de saldo',
+    'El titular pide una tarjeta nueva desde la app (confirmando con un '
+        'código por correo) y todo su saldo pasa a la nueva.',
+  ),
+
+  /// Anulación de movimientos por administración.
+  transactionReversal(
+    'transaction_reversal',
+    'Anulación de movimientos',
+    'Administración anula una recarga o un cobro con un motivo; se registra '
+        'un contramovimiento y el original no se modifica.',
+    audience: ModuleAudience.admin,
   );
 
-  const AppModule(this.key, this.label, this.description);
+  const AppModule(
+    this.key,
+    this.label,
+    this.description, {
+    this.audience = ModuleAudience.cardholder,
+  });
 
   /// Llave en la base y en el JSON.
   final String key;
@@ -72,8 +97,8 @@ enum AppModule {
   /// Qué hace el módulo, en una frase.
   final String description;
 
-  /// Quién usa el módulo (por ahora, todos son del titular).
-  ModuleAudience get audience => ModuleAudience.cardholder;
+  /// Quién usa el módulo.
+  final ModuleAudience audience;
 
   /// Busca un módulo por su [key]; `null` si no existe.
   static AppModule? fromKey(String key) =>

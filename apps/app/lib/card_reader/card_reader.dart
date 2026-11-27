@@ -8,7 +8,7 @@ import 'package:monedero_core/monedero_core.dart';
 /// la API valida la firma con la llave maestra en cada operación (regla 10).
 ///
 /// - Hoy: [SimulatedCardReader] (QR con cámara, lista demo o escritura).
-/// - Fase 7: `NfcMifareCardReader` (chip MIFARE con NFC), ver docs/nfc.md.
+/// - Fase 7: `NfcCardReader` (chip NTAG215 con NFC), ver docs/nfc.md.
 abstract interface class CardReader {
   /// Nombre visible del lector.
   String get name;

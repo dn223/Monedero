@@ -87,6 +87,82 @@ class CardService {
     return (await _byId(pool, cardId))!;
   }
 
+  /// Vincula un chip NFC a la tarjeta (Fase 7, ADR 0017).
+  ///
+  /// La tarjeta adopta el UID real del chip y su firma se recalcula con la
+  /// llave maestra (regla 10); devuelve la tarjeta con las credenciales que la
+  /// app escribe en el chip. Solo tarjetas `PENDING` o `ACTIVE`. Repetir con
+  /// el mismo chip no cambia nada (permite reintentar si falló la escritura).
+  /// Cada vinculación queda en `card_chip_links`.
+  Future<Map<String, Object?>> linkChip({
+    required String cardId,
+    required String chipUid,
+    required String adminId,
+  }) async {
+    if (!ChipCardLayout.isValidUid(chipUid)) {
+      throw ApiException(
+        ApiErrorCode.validationFailed,
+        'El UID del chip debe tener ${ChipCardLayout.uidBytes} bytes en '
+        'hexadecimal.',
+      );
+    }
+    final uid = chipUid.toUpperCase();
+    return pool.runTx((tx) async {
+      final rows = await query(
+        tx,
+        'SELECT number, uid, status FROM cards WHERE id = @id:uuid FOR UPDATE',
+        {'id': cardId},
+      );
+      if (rows.isEmpty) {
+        throw const ApiException(
+          ApiErrorCode.notFound,
+          'Tarjeta no encontrada.',
+        );
+      }
+      final card = rows.first;
+      final status = card['status'] as String;
+      if (status != 'PENDING' && status != 'ACTIVE') {
+        throw ApiException(
+          ApiErrorCode.cardNotActive,
+          'Solo se graba el chip de una tarjeta pendiente o activa.',
+          details: {'status': status},
+        );
+      }
+      final previousUid = (card['uid'] as String).toUpperCase();
+      if (previousUid == uid) return (await _byId(tx, cardId))!;
+
+      final taken = await query(
+        tx,
+        'SELECT 1 FROM cards WHERE uid = @u AND id <> @id:uuid',
+        {'u': uid, 'id': cardId},
+      );
+      if (taken.isNotEmpty) {
+        throw const ApiException(
+          ApiErrorCode.chipAlreadyLinked,
+          'Ese chip ya está vinculado a otra tarjeta.',
+        );
+      }
+      final signature = CardSignature.sign(
+        masterKey: config.cardMasterKey,
+        number: card['number'] as String,
+        uid: uid,
+      );
+      await query(
+        tx,
+        'UPDATE cards SET uid = @u, signature = @s, updated_at = now() '
+        'WHERE id = @id:uuid',
+        {'u': uid, 's': signature, 'id': cardId},
+      );
+      await query(
+        tx,
+        'INSERT INTO card_chip_links (card_id, previous_uid, chip_uid, '
+        'performed_by) VALUES (@c:uuid, @p, @u, @a:uuid)',
+        {'c': cardId, 'p': previousUid, 'u': uid, 'a': adminId},
+      );
+      return (await _byId(tx, cardId))!;
+    });
+  }
+
   /// Tarjetas del titular, con credenciales para su QR.
   Future<List<Map<String, Object?>>> cardsOf(String cardholderId) async {
     final rows = await query(
@@ -103,11 +179,16 @@ class CardService {
     String cardId, {
     String? ownerId,
   }) async {
-    if (ownerId != null) await _requireOwner(cardId, ownerId);
+    if (ownerId != null) await requireOwner(cardId, ownerId);
     final rows = await query(
       pool,
-      'SELECT id, type, amount_cents, balance_after_cents, created_at '
-      'FROM transactions WHERE card_id = @id:uuid ORDER BY created_at DESC',
+      'SELECT t.id, t.type, t.amount_cents, t.balance_after_cents, t.created_at, '
+      'r.reason AS reversal_reason, o.reason AS reverses_reason, '
+      'o.original_transaction_id AS reverses_id '
+      'FROM transactions t '
+      'LEFT JOIN reversals r ON r.original_transaction_id = t.id '
+      'LEFT JOIN reversals o ON o.reversal_transaction_id = t.id '
+      'WHERE t.card_id = @id:uuid ORDER BY t.created_at DESC',
       {'id': cardId},
     );
     return [
@@ -118,6 +199,14 @@ class CardService {
           'amountCents': t['amount_cents'],
           'balanceAfterCents': t['balance_after_cents'],
           'createdAt': (t['created_at'] as DateTime).toUtc().toIso8601String(),
+          // Anulación (ver docs/adr/0016): si este movimiento fue anulado,
+          // o si es el contramovimiento de otro.
+          'reversed': t['reversal_reason'] != null,
+          'reversible':
+              t['reversal_reason'] == null &&
+              TransactionType.fromWire(t['type'] as String).isReversible,
+          'reason': ?(t['reversal_reason'] ?? t['reverses_reason']),
+          'reversesTransactionId': ?t['reverses_id'],
         },
     ];
   }
@@ -125,7 +214,7 @@ class CardService {
   /// Paso 1 del reporte de pérdida: envía un código al correo del titular
   /// y lo devuelve (la API solo lo muestra en modo demo).
   Future<String> startLossReport(String cardholderId, String cardId) async {
-    final card = await _requireOwner(cardId, cardholderId);
+    final card = await requireOwner(cardId, cardholderId);
     if (card['status'] != 'ACTIVE' && card['status'] != 'PENDING') {
       throw const ApiException(
         ApiErrorCode.conflict,
@@ -147,7 +236,7 @@ class CardService {
     String cardId,
     String code,
   ) async {
-    await _requireOwner(cardId, cardholderId);
+    await requireOwner(cardId, cardholderId);
     await auth.consumeCode(
       cardholderId: cardholderId,
       purpose: 'REPORT_LOSS',
@@ -300,7 +389,9 @@ class CardService {
     };
   }
 
-  Future<Map<String, dynamic>> _requireOwner(
+  /// Tarjeta [cardId] con su estado y el correo del titular; lanza
+  /// `NOT_FOUND` si no pertenece a [ownerId].
+  Future<Map<String, dynamic>> requireOwner(
     String cardId,
     String ownerId,
   ) async {

@@ -6,6 +6,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+### Agregado — Fase 7: tarjetas físicas NFC con NTAG215 (2026-11-23)
+- Administración graba una tarjeta en un chip **NTAG215** desde la app Android (Tarjetas → **Grabar chip NFC**). La tarjeta adopta el UID real del chip y la API recalcula la firma: `POST /v1/admin/cards/{id}/chip`. Repetir con el mismo chip no cambia nada; un chip no puede ser de dos tarjetas (`CHIP_ALREADY_LINKED`).
+- La caja lee el chip con **NFC** (primera opción en teléfonos con NFC): UID del hardware, número y firma de la memoria; la API valida igual que con el QR. Copiar la memoria a otro chip no sirve porque cambia el UID.
+- `ChipCardLayout` en `core` (páginas 4–12: encabezado, número y firma). `NfcCardReader` reemplaza el esqueleto `NfcMifareCardReader`. Paquete `nfc_manager` 4.3.0; permiso NFC no obligatorio en Android. La app atiende `TECH_DISCOVERED` de NTAG215 para que Android no muestre "no hay aplicación" al dejar el chip cerca.
+- Migración `0007_card_chip_links.sql` (auditoría de cada vinculación, solo inserción). ADR 0017. API 0.9.0; app 0.8.0+8.
+- Pruebas: 5 de `core`, 4 de integración y 8 de la app (chip falso y hoja de lectura).
+
+### Agregado — APK descargable desde el link (2026-11-19)
+- La API sirve el APK release de 64 bits en `/descargas/monedero.apk` (tipo `application/vnd.android.package-archive`, como adjunto; 404 si no se compiló) y la web muestra **Descargar app para Android** en la pantalla inicial. 2 pruebas nuevas de la API.
+
+### Agregado — Observaciones del ingeniero (2026-11-18)
+- **Anulación de movimientos** por administración (módulo `transaction_reversal`): `POST /v1/admin/transactions/{id}/reversals` con motivo e `Idempotency-Key`. Se registra un contramovimiento `REVERSAL_IN`/`REVERSAL_OUT`; el original no se edita (regla 6), cada movimiento se anula una sola vez y anular una recarga nunca deja saldo negativo. Botón **Anular** en el historial de Administración → Tarjetas; aviso por correo al titular.
+- **Tarjeta nueva con traslado de saldo** pedida por el titular (módulo `card_transfer`): `POST /v1/me/cards/{id}/card-requests` y `/confirm` con código por correo; reutiliza la reposición atómica (`reason = REQUESTED`).
+- **Mi perfil** del titular: nombre, contraseña, correo (código al correo nuevo) y PIN (`/v1/me/profile`, `/v1/me/password`, `/v1/me/email-change`).
+- Migración `0006_reversals_transfer_profile.sql` (tabla `reversals`, tipos nuevos, vista de conciliación, `replacements.requested_by`, propósitos de código y `new_email`, módulos nuevos). Códigos `TRANSACTION_ALREADY_REVERSED` y `TRANSACTION_NOT_REVERSIBLE`. ADR 0016. API 0.8.0.
+- Pruebas: 3 de `core`, 8 de integración (anulación, tarjeta nueva, perfil) y 2 de widgets.
+
 ### Cambiado — Sistema sin datos de prueba
 - Documento de la exposición en tres partes (`docs/monedero-doc.pdf`) actualizado con módulos, asistente, caja con código y sistema sin datos de prueba; la presentación de entrada ya no menciona cuentas de prueba.
 - La base empieza solo con la cuenta de administración (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, generada en `.env`); titulares y cajas se registran en la app. `SAMPLE_DATA=true` vuelve a sembrar los ejemplos (ADR 0015).

@@ -186,19 +186,22 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-10-27, fases 1 a 6 y módulos terminados en la rama `feat/fase-4-6-demo`, pendiente de revisión y fusión):
+**Estado actual** (2026-11-25, fases 1 a 7 en ramas pendientes de revisión y fusión: `feat/fase-4-6-demo` → `feat/observaciones-2` → `feat/fase-7-nfc`):
 - Fases 1–2: monorepo, Docker Compose, `tool/`, CI; `core` (centavos, Luhn, firma HMAC); base con barreras (`0001`, `0002`); API completa con las 5 pruebas obligatorias.
 - Fase 4: la app habla con la API en los tres roles. Sesión por rol (`core/session/`), titular (`features/holder/`), caja (`features/cashier/` + `lib/card_reader/`), inicio de sesión común (`features/auth/`) con cuentas demo en modo demo. Las vistas de diseño de la Fase 3 se eliminaron.
 - Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
 - Fase 6: APK release firmado con keystore en `~/.monedero/` (ADR 0013), ícono generado desde `brand.dart`, PWA, y exposición por link: la API sirve la web y `tool/share.dart` abre un quick tunnel de Cloudflare (ADR 0011, `docs/exposicion.md`).
 - Observaciones del ingeniero: **módulos** activables desde Administración → Módulos (migración `0004`, `AppModule`, `ModuleService`, `MODULE_DISABLED`, ADR 0014) y asistente virtual del titular (`features/assistant/`).
 - Sistema sin datos de prueba (ADR 0015): `SAMPLE_DATA=false` siembra solo administración (`ADMIN_EMAIL`/`ADMIN_PASSWORD` en `.env`); la caja entra con su código (`POST /v1/auth/terminals/login`, migración `0005`); la app no muestra la palabra "demo".
-- Pruebas: 29 de `core`, 46 de la API y 8 de widgets, todas en verde con `tool/check.dart`.
+- Observaciones del 2026-11-18 (rama `feat/observaciones-2`): anulación por contramovimiento (`REVERSAL_IN`/`REVERSAL_OUT`, tabla `reversals`, módulo `transaction_reversal`), tarjeta nueva pedida por el titular con traslado de saldo (módulo `card_transfer`) y Mi perfil (nombre, contraseña, correo, PIN). Migración `0006`, ADR 0016.
+- APK descargable desde el link (2026-11-19): la API sirve `/descargas/monedero.apk` y la web muestra "Descargar app para Android" (`docs/android.md`).
+- **Fase 7 (2026-11-23, rama `feat/fase-7-nfc`, parte de `feat/observaciones-2`):** tarjetas físicas **NTAG215** (ADR 0017). Administración graba el chip y la tarjeta adopta su UID (`POST /v1/admin/cards/{id}/chip`, migración `0007`, `CHIP_ALREADY_LINKED`); la caja lo lee con `NfcCardReader` (`lib/card_reader/nfc_chip.dart`, `nfc_manager` 4.3.0). Formato del chip: `ChipCardLayout` en `core`. API 0.9.0.
+- Pruebas: 37 de `core`, 60 de la API y 18 de la app, todas en verde con `tool/check.dart`.
 
-**Siguientes pasos** (siguiente entrega: Fase 7 — NFC):
-1. El equipo revisa y fusiona `feat/fase-4-6-demo`; ensayo de la exposición con `tool/share.dart`. Confirmar los requerimientos adicionales del ingeniero y si acepta el link temporal como despliegue.
-2. Probar el APK en los celulares del equipo y respaldar `~/.monedero/`.
-3. Probar MIFARE Classic en los teléfonos (`docs/nfc.md` § 5) e implementar `NfcMifareCardReader`.
+**Siguientes pasos:**
+1. Fase 7 probada en el Redmi Note 15 Pro 5G con llaveros NTAG215 (2026-11-25): grabar, recargar, cobrar, PIN, `CHIP_ALREADY_LINKED`, chip sin grabar y conciliación, desde el APK conectado por el link. El ADR 0017 está como *Propuesto* hasta que el equipo lo apruebe.
+2. El equipo revisa y fusiona `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc` (las tres ya están en GitHub; PR de la Fase 7 abierto contra `feat/observaciones-2` el 2026-11-26); ensayo de la exposición con `tool/share.dart`.
+3. Comprar tarjetas NTAG215 de 13.56 MHz (las del kit del duplicador son de 125 kHz). Pendiente técnico: contraseña de escritura del chip (PWD/PACK).
 4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.
 
 ---

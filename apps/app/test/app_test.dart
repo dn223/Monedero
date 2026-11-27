@@ -386,12 +386,12 @@ void main() {
     await tester.tap(find.text('Módulos'));
     await tester.pumpAndSettle();
 
-    expect(find.text('5 de 5 activos'), findsOneWidget);
+    expect(find.text('7 de 7 activos'), findsOneWidget);
     await tester.tap(find.widgetWithText(SwitchListTile, 'Asistente virtual'));
     await tester.pumpAndSettle();
 
     expect(sent, {'enabled': false});
-    expect(find.text('4 de 5 activos'), findsOneWidget);
+    expect(find.text('6 de 7 activos'), findsOneWidget);
     expect(find.text('Asistente virtual: desactivado.'), findsOneWidget);
   });
 }
@@ -404,7 +404,7 @@ Map<String, Object?> _modules(Set<String> off) => {
         'key': m.key,
         'name': m.label,
         'description': m.description,
-        'audience': 'CARDHOLDER',
+        'audience': m.audience.wireName,
         'enabled': !off.contains(m.key),
         'updatedAt': '2026-10-27T15:00:00Z',
         'updatedByName': null,

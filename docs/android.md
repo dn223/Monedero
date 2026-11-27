@@ -35,6 +35,17 @@ Ver [ADR 0013](adr/0013-firma-del-apk-fuera-del-repositorio.md).
   ```
   (`apksigner` está en `Android/Sdk/build-tools/36.0.0`.) Debe decir `CN=Monedero UFG`.
 
+## Descargar desde el link
+
+La API sirve el APK de 64 bits en `/descargas/monedero.apk`, y la pantalla inicial de la web muestra **Descargar app para Android**. Para publicarlo con la dirección del link ya puesta:
+
+```bash
+cd apps/app
+flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=API_BASE_URL=https://<link>.trycloudflare.com
+```
+
+No hace falta reiniciar la API: lee `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` en cada descarga. Si el link cambia, se vuelve a compilar (o se cambia el servidor en la app, ver abajo). Si no hay APK compilado, la ruta responde 404.
+
 ## Instalar en un celular
 
 1. Copiar el APK al celular (cable, Drive o WhatsApp como documento) o, con depuración USB: `flutter install --release` desde `apps/app`.

@@ -1,6 +1,6 @@
-# Plan para tarjetas físicas NFC (fase futura)
+# Tarjetas físicas NFC (Fase 7)
 
-> En la fase actual **no se usan tarjetas físicas**: la app usa `SimulatedCardReader` (QR, lista de demostración o número manual). Este documento prepara la siguiente fase para que conectar el lector real **no obligue a reescribir la lógica**: solo se implementa `NfcMifareCardReader` detrás de la misma interfaz `CardReader`.
+> **Estado (2026-11-23):** implementado con **NTAG215** ([ADR 0017](adr/0017-tarjetas-fisicas-ntag215.md)), en la rama `feat/fase-7-nfc`. La prueba con el Redmi Note 15 Pro 5G mostró que el teléfono lee los llaveros NTAG215 del kit del duplicador, y que las tarjetas rectangulares del kit son de 125 kHz (no sirven). Las secciones 1 a 3 (MIFARE Classic) quedan como referencia; lo que se usa está en la sección 7.
 
 ## 1. Tarjeta elegida: MIFARE Classic 1K
 
@@ -93,26 +93,44 @@ Si los teléfonos del equipo no son compatibles con MIFARE Classic:
 
 Con NTAG215, el número y la firma HMAC se guardan en la memoria de usuario, la escritura se protege con contraseña derivada del UID y se verifica la firma de originalidad. La firma HMAC del servidor sigue siendo la defensa principal. Para mayor seguridad existe **NTAG 424 DNA** (AES-128 y mensajes autenticados), que cuesta más.
 
-## 7. Implementación prevista en la app
+## 7. Implementación (NTAG215)
 
-```dart
-/// Lo que devuelve cualquier lector de tarjetas.
-class CardReadResult {
-  final String number;     // 16 dígitos
-  final String uid;        // hex
-  final String signature;  // hex, 16 bytes
-}
+### Memoria del chip
+| Página | Contenido |
+|---|---|
+| 0–3 | Del fabricante: UID de 7 bytes, bloqueo y *capability container*. No se tocan |
+| 4 | Encabezado `4D 4E` ("MN") + versión del formato (`01`) + `00` |
+| 5–8 | Número de 16 dígitos en ASCII |
+| 9–12 | Firma `HMAC-SHA256(llave maestra, número + UID)` truncada a 16 bytes |
 
-abstract interface class CardReader {
-  Future<CardReadResult> read();
-}
+El formato vive en `ChipCardLayout` (`packages/core`), con pruebas. **El saldo no se guarda en el chip.**
 
-class SimulatedCardReader implements CardReader { /* QR, lista demo, manual */ }
+### Grabar un chip (administración, app Android)
+1. Administración → Tarjetas → botón **Grabar chip NFC** (ícono sin contacto) en una tarjeta pendiente o activa.
+2. Se acerca el chip. La app lee su UID y llama a `POST /v1/admin/cards/{id}/chip`; la tarjeta **adopta el UID del chip** y la API recalcula la firma.
+3. La app escribe las páginas 4–12 y las vuelve a leer para verificar.
+4. El QR anterior de esa tarjeta deja de servir; el titular ve el nuevo en su app.
 
-/// TODO(fase NFC): implementar con un paquete NFC verificado en pub.dev.
-/// Flujo: leer UID → pedir llave A a la API → autenticar sector 1 →
-/// leer bloques 4 y 5 → devolver CardReadResult.
-class NfcMifareCardReader implements CardReader { /* esqueleto */ }
-```
+Si la escritura falla a la mitad, se repite con el mismo chip: la API no cambia nada la segunda vez. Un chip ya vinculado a otra tarjeta se rechaza (`CHIP_ALREADY_LINKED`).
 
-Se agrega en la Fase 4, sin dependencias NFC activas. La API valida igual la firma venga del QR o del chip.
+### Leer en la caja (app Android)
+La caja muestra **NFC** como primera opción cuando el teléfono tiene NFC. `NfcCardReader` lee el UID del hardware y el número y la firma de la memoria, y entrega las mismas `CardCredentials` que el QR; la API las valida igual (regla 10). Copiar la memoria a otro chip no sirve, porque el UID leído cambia y la firma deja de coincidir.
+
+### Código
+- `apps/app/lib/card_reader/nfc_chip.dart`: `ChipTag` y `NfcChipIo` (frontera con el hardware), `readChipCredentials`, `writeChipCredentials` y la implementación con `nfc_manager` (páginas crudas con `MifareUltralight` de Android, sin NDEF).
+- `apps/app/lib/card_reader/nfc_card_reader.dart`: lector de la caja y la hoja "Acerca la tarjeta".
+- Permiso `android.permission.NFC` con `android.hardware.nfc` **no obligatorio**: sin NFC la app sigue funcionando con QR, lista o número.
+- `TECH_DISCOVERED` (NfcA + MifareUltralight, `res/xml/nfc_tech_filter.xml`) en `MainActivity`: si el chip sigue cerca cuando la lectura ya terminó, Android se lo entrega a Monedero en vez de mostrar "no hay aplicación que admita esta etiqueta". Con la app cerrada, acercar un llavero abre Monedero.
+
+### Probar el teléfono por USB (cuando la Wi-Fi aísla a los clientes)
+Algunos routers no dejan que un teléfono en Wi-Fi llegue a una laptop por cable. Con **Depuración USB** activa: `adb reverse tcp:8080 tcp:8080` y compilar con `--dart-define=API_BASE_URL=http://localhost:8080` (o poner esa dirección en **Servidor**). Hay que repetir `adb reverse` cada vez que se conecta el cable.
+
+### Probarlo
+1. Compilar e instalar el APK (`docs/android.md`).
+2. Administración (en el teléfono): emitir y entregar una tarjeta, **Grabar chip NFC** y acercar un llavero NTAG215.
+3. Caja (en el mismo teléfono o en otro con NFC): opción **NFC** → **Acercar la tarjeta** → recargar y cobrar.
+4. Prueba de clonación para el informe: copiar el llavero con el duplicador a otro NTAG215 de UID modificable; la copia exacta funciona (riesgo documentado en el ADR 0017) y reportar la pérdida bloquea ambas.
+
+### Pendiente
+- Proteger la escritura del chip con contraseña (PWD/PACK derivada del UID).
+- Para producción, NTAG 424 DNA (sección 6).

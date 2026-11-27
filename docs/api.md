@@ -60,6 +60,9 @@ La app decide por `code`, nunca por `message`.
 | `INVALID_VERIFICATION_CODE` | 422 | Código de correo incorrecto o vencido |
 | `TOO_MANY_ATTEMPTS` | 429 | PIN bloqueado 15 min (3 fallos) o código con 5 intentos |
 | `MODULE_DISABLED` | 403 | Administración apagó el módulo que se intentó usar (`details.module`) |
+| `TRANSACTION_ALREADY_REVERSED` | 409 | El movimiento ya fue anulado (cada uno se anula una sola vez) |
+| `TRANSACTION_NOT_REVERSIBLE` | 409 | Se intentó anular algo que no es recarga ni cobro (reposiciones o anulaciones) |
+| `CHIP_ALREADY_LINKED` | 409 | El UID del chip NFC ya pertenece a otra tarjeta |
 | `RATE_LIMITED` | 429 | Demasiadas solicitudes del mismo cliente en un minuto (`details.retryAfterSeconds`) |
 | `INTERNAL_ERROR` | 500 | Error inesperado (sin detalles internos) |
 
@@ -81,6 +84,12 @@ La app decide por `code`, nunca por `message`.
 | `POST` | `/v1/me/cards/{id}/loss-reports` | titular | Envía código de confirmación |
 | `POST` | `/v1/me/cards/{id}/loss-reports/confirm` | titular | `{code}` → `BLOCKED` |
 | `PUT` | `/v1/me/pin` | titular | `{currentPin, newPin}`. Módulo `pin_change` |
+| `GET` / `PUT` | `/v1/me/profile` | titular | Perfil; `PUT {fullName}` cambia el nombre |
+| `PUT` | `/v1/me/password` | titular | `{currentPassword, newPassword}` (contraseña actual incorrecta → `400 VALIDATION_FAILED`) |
+| `POST` | `/v1/me/email-change` | titular | `{newEmail, password}`; envía el código **al correo nuevo** (`demoCode` en modo demo) |
+| `POST` | `/v1/me/email-change/confirm` | titular | `{code}` → el correo nuevo reemplaza al anterior |
+| `POST` | `/v1/me/cards/{id}/card-requests` | titular | Pide tarjeta nueva (tarjeta `ACTIVE`); envía código. Módulo `card_transfer` |
+| `POST` | `/v1/me/cards/{id}/card-requests/confirm` | titular | `{code}` + `Idempotency-Key` → tarjeta nueva `ACTIVE` con todo el saldo; la anterior `REPLACED` |
 | `POST` | `/v1/me/payments` | titular | `{terminalCode, amountCents, pin?}` + `Idempotency-Key`: paga en la caja con su código de 6 dígitos. Módulo `holder_payments` |
 | `POST` | `/v1/assistant/messages` | titular | `{message}` → `{intent, reply, suggestions}`: asistente virtual con los datos reales del titular. Módulo `assistant` |
 | `GET` | `/v1/modules` | público | Módulos con `key`, `name`, `description`, `enabled`, `updatedAt` y `updatedByName` |
@@ -94,7 +103,9 @@ La app decide por `code`, nunca por `message`.
 | `GET` | `/v1/admin/cards?q=` | admin | Buscar tarjetas |
 | `POST` | `/v1/admin/cards` | admin | `{cardholderId}` → tarjeta `PENDING` |
 | `POST` | `/v1/admin/cards/{id}/deliver` | admin | `PENDING` → `ACTIVE` |
+| `POST` | `/v1/admin/cards/{id}/chip` | admin | `{chipUid}` (7 bytes en hex): la tarjeta `PENDING`/`ACTIVE` adopta el UID del chip NTAG215 y su firma se recalcula; devuelve la tarjeta con las credenciales a grabar. Repetir con el mismo chip no cambia nada; queda en `card_chip_links` ([ADR 0017](adr/0017-tarjetas-fisicas-ntag215.md)) |
 | `POST` | `/v1/admin/cards/{id}/replace` | admin | Reposición (transacción única) + `Idempotency-Key` |
+| `POST` | `/v1/admin/transactions/{id}/reversals` | admin | Anula una recarga o un cobro: `{reason}` (≥ 5 caracteres) + `Idempotency-Key`. Inserta `REVERSAL_IN`/`REVERSAL_OUT`; el original no cambia. Módulo `transaction_reversal` |
 | `GET` | `/v1/admin/cards/{id}/transactions` | admin | Movimientos de una tarjeta |
 | `GET` | `/v1/admin/reconciliation` | admin | Saldo vs. suma de movimientos |
 | `GET` | `/v1/admin/stats` | admin | Tablero: tarjetas por estado, saldo en circulación y recargas/cobros por día (14 días) |
@@ -119,6 +130,8 @@ Administración enciende o apaga partes de la app desde **Administración → M�
 | `holder_payments` | Pago con código de caja | `POST /v1/me/payments` |
 | `card_qr` | QR de la tarjeta | `GET /v1/me/cards` deja de enviar `credentials` |
 | `pin_change` | Cambio de PIN | `PUT /v1/me/pin` |
+| `card_transfer` | Tarjeta nueva con traslado de saldo | `POST /v1/me/cards/{id}/card-requests[/confirm]` |
+| `transaction_reversal` | Anulación de movimientos (administración) | `POST /v1/admin/transactions/{id}/reversals` |
 
 No son módulos (siempre activos): recargas y cobros en caja, reporte de pérdida y reposición.
 

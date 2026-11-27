@@ -57,6 +57,12 @@ enum ApiErrorCode {
   /// Terminal desconocido o revocado.
   terminalNotAuthorized('TERMINAL_NOT_AUTHORIZED', 403),
 
+  /// El movimiento ya fue anulado (cada uno se anula una sola vez).
+  transactionAlreadyReversed('TRANSACTION_ALREADY_REVERSED', 409),
+
+  /// El movimiento no se puede anular (reposiciones y anulaciones).
+  transactionNotReversible('TRANSACTION_NOT_REVERSIBLE', 409),
+
   /// Endpoint de demo con el modo demo apagado.
   demoModeDisabled('DEMO_MODE_DISABLED', 403),
 
@@ -65,6 +71,9 @@ enum ApiErrorCode {
 
   /// Administración desactivó el módulo de la aplicación que se usó.
   moduleDisabled('MODULE_DISABLED', 403),
+
+  /// El chip NFC ya está vinculado a otra tarjeta (su UID es único).
+  chipAlreadyLinked('CHIP_ALREADY_LINKED', 409),
 
   /// Error inesperado del servidor. Nunca expone detalles internos.
   internal('INTERNAL_ERROR', 500);

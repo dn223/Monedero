@@ -339,17 +339,22 @@ class StatusChip extends StatelessWidget {
 /// Fila de movimiento del historial.
 class TransactionTile extends StatelessWidget {
   /// Crea la fila a partir del JSON de un movimiento de la API.
-  const TransactionTile(this.item, {this.subtitle, super.key});
+  const TransactionTile(this.item, {this.subtitle, this.onReverse, super.key});
 
-  /// Movimiento (`type`, `amountCents`, `balanceAfterCents`, `createdAt`).
+  /// Movimiento (`type`, `amountCents`, `balanceAfterCents`, `createdAt`;
+  /// opcionalmente `reversed`, `reversible` y `reason`).
   final Map<String, Object?> item;
 
   /// Texto opcional en lugar de "fecha · saldo".
   final String? subtitle;
 
+  /// Si se indica y el movimiento es anulable, muestra el botón "Anular"
+  /// (solo administración).
+  final VoidCallback? onReverse;
+
   /// `true` si el tipo suma saldo.
   static bool isCredit(String type) =>
-      type == 'TOP_UP' || type == 'REPLACEMENT_IN';
+      type == 'TOP_UP' || type == 'REPLACEMENT_IN' || type == 'REVERSAL_IN';
 
   /// Nombre del tipo de movimiento.
   static String labelOf(String type) => switch (type) {
@@ -357,6 +362,8 @@ class TransactionTile extends StatelessWidget {
     'DEBIT' => 'Compra',
     'REPLACEMENT_IN' => 'Saldo recibido de la tarjeta anterior',
     'REPLACEMENT_OUT' => 'Saldo enviado a la tarjeta nueva',
+    'REVERSAL_IN' => 'Devolución por cobro anulado',
+    'REVERSAL_OUT' => 'Recarga anulada',
     _ => type,
   };
 
@@ -366,6 +373,17 @@ class TransactionTile extends StatelessWidget {
     final type = item['type']! as String;
     final credit = isCredit(type);
     final amount = item['amountCents']! as int;
+    final reversed = item['reversed'] == true;
+    final reason = item['reason'] as String?;
+    final amountText = Text(
+      '${credit ? '+' : '−'}${Money.format(amount)}',
+      style: AppText.money(
+        Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: credit ? scheme.primary : scheme.onSurface,
+          decoration: reversed ? TextDecoration.lineThrough : null,
+        ),
+      ),
+    );
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: CircleAvatar(
@@ -375,22 +393,33 @@ class TransactionTile extends StatelessWidget {
         child: Icon(switch (type) {
           'TOP_UP' => Icons.add_rounded,
           'DEBIT' => Icons.shopping_bag_outlined,
+          'REVERSAL_IN' || 'REVERSAL_OUT' => Icons.undo_rounded,
           _ => Icons.swap_horiz_rounded,
         }, color: credit ? scheme.onPrimaryContainer : scheme.onSurfaceVariant),
       ),
-      title: Text(labelOf(type)),
+      title: Text(reversed ? '${labelOf(type)} (anulado)' : labelOf(type)),
       subtitle: Text(
-        subtitle ??
-            '${Fmt.dateTime(item['createdAt']! as String)}, saldo '
-                '${Money.format(item['balanceAfterCents']! as int)}',
+        [
+          subtitle ??
+              '${Fmt.dateTime(item['createdAt']! as String)}, saldo '
+                  '${Money.format(item['balanceAfterCents']! as int)}',
+          if (reason != null) 'Motivo: $reason',
+        ].join('\n'),
       ),
-      trailing: Text(
-        '${credit ? '+' : '−'}${Money.format(amount)}',
-        style: AppText.money(
-          Theme.of(context).textTheme.titleMedium
-              ?.copyWith(color: credit ? scheme.primary : scheme.onSurface),
-        ),
-      ),
+      isThreeLine: reason != null,
+      trailing: onReverse != null && item['reversible'] == true
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                amountText,
+                IconButton(
+                  tooltip: 'Anular movimiento',
+                  icon: const Icon(Icons.undo_rounded),
+                  onPressed: onReverse,
+                ),
+              ],
+            )
+          : amountText,
     );
   }
 }

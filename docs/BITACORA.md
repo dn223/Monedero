@@ -14,6 +14,97 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-26 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`):
+- `tool/check.dart` en verde y commit de la documentación de la prueba completa con el llavero (`6fbd390`).
+- Rama `feat/fase-7-nfc` subida a GitHub (con GitHub Desktop) y pull request abierto contra `feat/observaciones-2`.
+
+**Pendiente:**
+- Revisión y fusión de `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc`; aprobación del ADR 0017.
+- Ensayo de la exposición con `tool/share.dart`.
+
+**Problemas conocidos:**
+- En este equipo no está instalado `gh`; los pull requests se abren desde GitHub Desktop o el navegador.
+
+---
+
+## 2026-11-25 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`):
+- `tool/check.dart` en verde y commit de la Fase 7 (`90a458f`).
+- Se descartó NFC en la web (Web NFC): el diseño original deja la lectura de tarjetas en la app Android y la web para administración y demo (ADR 0017 sin cambios).
+- **Prueba con el Redmi Note 15 Pro 5G y un llavero NTAG215** (APK release por USB con `adb reverse tcp:8080 tcp:8080`): Administración grabó el chip (`POST /v1/admin/cards/{id}/chip` → 200) y Caja hizo una recarga a esa tarjeta (201).
+- Link público con `tool/share.dart` y APK de 64 bits compilado con `API_BASE_URL` igual al link; descarga verificada por `/descargas/monedero.apk` (mismo SHA-256). Instalado en el Redmi apuntando al link, sin cable.
+- Prueba completa con el llavero desde la app instalada usando el link (sin cable): cobro, cobro con PIN (> $25), chip repetido rechazado (`CHIP_ALREADY_LINKED`), llavero sin grabar rechazado y conciliación en cero. Todo correcto según el integrante. En la web la caja no muestra NFC (es lo esperado).
+
+**Pendiente:**
+- Aprobación del ADR 0017 por el equipo; revisión y fusión de las tres ramas.
+
+**Problemas conocidos:**
+- El link y el APK descargable dependen de que la laptop siga encendida con Docker e Internet; si el túnel se recrea, el link cambia (la app se reconfigura escaneando el QR, sin reinstalar). Para que funcione sin la laptop hace falta la Fase 8.
+- `adb reverse` se pierde al reconectar el cable; hay que volver a correrlo.
+- El APK de este equipo sigue firmado con la llave de depuración.
+
+---
+
+## 2026-11-23 — Integrante por confirmar — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/fase-7-nfc`, que parte de `feat/observaciones-2`; sin push ni fusión):
+- Equipo nuevo preparado: Flutter 3.47.7 en `C:\src\flutter`, Git 2.55.0 y Docker Desktop. `tool/check.dart` en verde en `main` y en `feat/observaciones-2`.
+- Prueba de hardware: el **Redmi Note 15 Pro 5G** lee los llaveros **NTAG215** de un kit de duplicador (genéricos, "Non-genuine"); las tarjetas rectangulares del kit son de 125 kHz y ningún teléfono las lee.
+- **Fase 7 con NTAG215** (ADR 0017, *Propuesto*): administración graba el chip y la tarjeta adopta su UID (`POST /v1/admin/cards/{id}/chip`, migración `0007`, `CHIP_ALREADY_LINKED`); la caja lee con `NfcCardReader`. `ChipCardLayout` en `core`; paquete `nfc_manager` 4.3.0; permiso NFC no obligatorio.
+- Pruebas: 37 de `core`, 60 de la API y 18 de la app, en verde. API 0.9.0, app 0.8.0+8.
+
+**Pendiente:**
+- Probar el APK en el teléfono con los llaveros: grabar desde Administración y cobrar desde Caja. Hasta entonces la lectura y escritura real del chip no se ha probado (solo con un chip simulado en las pruebas).
+- Aprobación del ADR 0017 por el equipo; contraseña de escritura del chip (PWD/PACK); comprar tarjetas NTAG215 de 13.56 MHz.
+- Configurar la identidad de Git en este equipo antes de hacer commits.
+
+**Problemas conocidos:**
+- El APK de este equipo se firma con la llave de depuración (la llave oficial está en `~/.monedero/` de otro equipo): para instalarlo hay que desinstalar antes un APK firmado con la llave oficial.
+- Los NTAG215 genéricos suelen permitir cambiar el UID, así que un duplicador puede hacer una copia exacta (ADR 0017).
+
+---
+
+## 2026-11-19 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/observaciones-2`):
+- Prueba manual en la web (http://localhost:8080) con el link del equipo activo, sin reiniciar la demo: caja con código (cobro de $3.50 y recarga de $5 a la tarjeta de prueba), botón **Anular** en Administración → Tarjetas → historial (devolución con motivo, compra marcada "anulado"), conciliación en cero y vista del titular con el movimiento y el correo de aviso.
+- APK descargable desde el link: la API sirve el APK release de 64 bits en `/descargas/monedero.apk` y la pantalla inicial de la web muestra **Descargar app para Android**. El APK se compiló con `API_BASE_URL` igual al link del túnel, así que abre conectado al servidor.
+- `main.dart.js` se sirve sin caché para que un build nuevo se vea sin borrar la caché del navegador.
+- Se reinició solo el contenedor de la API (el túnel no se recreó; el link sigue igual). Descarga verificada por el link (mismo SHA-256 que el build).
+
+**Pendiente:**
+- Instalar el APK en un celular real y recorrer los tres roles.
+- Si el link del túnel cambia, recompilar el APK (o cambiar el servidor en la app).
+
+**Problemas conocidos:**
+- El APK descargable apunta a un link temporal; cuando se apague el túnel, la app pide otra dirección de servidor.
+
+---
+
+## 2026-11-18 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `feat/observaciones-2`, que parte de `feat/fase-4-6-demo`):
+- Observaciones del ingeniero: anulación de transacciones, transferencia del saldo a una tarjeta nueva y apartado para editar los datos del usuario. Decisiones del equipo: solo administración anula; la transferencia es una tarjeta nueva pedida por el titular; el perfil incluye nombre, contraseña, correo y PIN; anulación y transferencia son módulos.
+- Anulación por **contramovimiento** (`REVERSAL_IN`/`REVERSAL_OUT`, tabla `reversals`): el movimiento original no se edita, la conciliación sigue en cero y no hay sobregiro.
+- Tarjeta nueva pedida por el titular con código por correo; reutiliza la reposición atómica.
+- Mi perfil en la app (botón en la barra del titular) y botón **Anular** en el historial de administración.
+- Migración `0006`, ADR 0016, API 0.8.0, documentación (API, OpenAPI, base de datos, dominio, pruebas).
+- `tool/check.dart` en verde: 32 de `core`, 54 de la API y 10 de la app.
+- APK release nativo por arquitectura (`flutter build apk --release --split-per-abi`, ≈25 MB el de `arm64-v8a`), firmado con la llave oficial; contiene `libapp.so` (Dart compilado AOT) y `libflutter.so`, sin webview.
+
+**Pendiente:**
+- Probado a mano en la web (2026-11-18): anulación de un cobro (por API como administración, y su vista en la app del titular), cambio de nombre y de correo, y tarjeta nueva con traslado de saldo. Falta ver a mano el botón **Anular** en Administración (cubierto por prueba de widgets) y probar el APK release en un celular.
+- Fusionar `feat/fase-4-6-demo` y esta rama en `main` tras la revisión del equipo.
+- Cambiar la contraseña no revoca las otras sesiones abiertas (pendiente para producción).
+
+**Problemas conocidos:**
+- No hay anulaciones parciales: se anula el monto completo.
+
+---
+
 ## 2026-10-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-4-6-demo`, sin push ni fusión):
