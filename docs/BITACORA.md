@@ -14,6 +14,23 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 
 ---
 
+## 2026-11-27 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo:**
+- El ingeniero **aprobó el proyecto**; el equipo pasará a trabajar con un cliente.
+- Fusión en `main` del PR #1 (fases 4 a 6) y del PR #2 (observaciones del 18 de noviembre y Fase 7), con CI en verde. Las ramas no se borraron.
+- Preparación de la nube (`docs/nube.md`, `tool/nube/instalar.sh`) traída sobre `main`, y la presentación final de la exposición (`docs/presentacion-final.pdf`, fuente en `docs/presentacion/final-slides.html`).
+- Arreglo del grabado de chips por el link en la rama aparte `fix/nfc-grabado-dos-pasos`.
+
+**Pendiente:**
+- Crear el entorno en claude.ai/code con el setup script y medir cuánto tarda; probar Docker dentro del entorno.
+- Probar `fix/nfc-grabado-dos-pasos` con el celular.
+
+**Problemas conocidos:**
+- En la nube no hay Android SDK ni keystore: el APK se sigue compilando en la PC.
+
+---
+
 ## 2026-11-26 — Steven (sm224m) — Claude Code (Claude Opus 5.5)
 
 **Qué se hizo** (rama `feat/fase-7-nfc`):
@@ -45,6 +62,19 @@ Registro de cada sesión de trabajo, **la más reciente primero**. Al terminar u
 - El link y el APK descargable dependen de que la laptop siga encendida con Docker e Internet; si el túnel se recrea, el link cambia (la app se reconfigura escaneando el QR, sin reinstalar). Para que funcione sin la laptop hace falta la Fase 8.
 - `adb reverse` se pierde al reconectar el cable; hay que volver a correrlo.
 - El APK de este equipo sigue firmado con la llave de depuración.
+
+---
+
+## 2026-11-24 — David Alexis Navarrete Gálvez (dn223) — Claude Code (Claude Opus 5.5)
+
+**Qué se hizo** (rama `chore/entorno-nube`, desde `feat/observaciones-2`):
+- Script `tool/nube/instalar.sh` y guía `docs/nube.md` para trabajar en la nube de Claude Code. No cambia código de la app ni de la API.
+
+**Pendiente:**
+- Crear el entorno en claude.ai/code y abrir la primera sesión.
+
+**Problemas conocidos:**
+- Docker dentro del entorno en la nube no está probado.
 
 ---
 

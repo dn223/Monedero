@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monedero · Presentación final</title>
+<!--
+  Presentación final (docs/presentacion-final.pdf). Mismo estilo que la de entrada.
+  Regenerar:
+    "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu ^
+      --no-pdf-header-footer --print-to-pdf=docs\presentacion-final.pdf ^
+      docs\presentacion\final-slides.html
+-->
+<style>
+  @page { size: 13.333in 7.5in; margin: 0; }
+  :root {
+    --brand: #0B6E4F; --brand-dark: #063D2C; --mint: #A8F2CC; --mint-soft: #DCF5E8;
+    --surface: #F5FBF5; --ink: #171D1A; --muted: #56605B; --line: #C9D6CF;
+    --gold1: #F3D98B; --gold2: #C9A54A; --topup: #2A78D6; --debit: #EB6834;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Roboto, "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .slide {
+    width: 13.333in; height: 7.5in; position: relative; overflow: hidden;
+    padding: 0.7in 0.85in; break-after: page; background: var(--surface);
+    display: flex; flex-direction: column;
+  }
+  .slide:last-child { break-after: auto; }
+  .tag { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15pt; color: var(--brand); }
+  .tag .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--brand); position: relative; }
+  .tag .logo::after { content: ""; position: absolute; left: 7px; top: 9px; width: 16px; height: 12px; border: 3px solid #fff; border-radius: 3px; }
+  .num { position: absolute; right: 0.85in; top: 0.72in; font-size: 11pt; color: var(--muted); font-variant-numeric: tabular-nums; }
+  h1 { font-size: 46pt; line-height: 1.05; letter-spacing: -1.5px; font-weight: 800; }
+  h2 { font-size: 32pt; line-height: 1.1; letter-spacing: -0.8px; font-weight: 800; margin-top: 26px; }
+  .lead { font-size: 16pt; color: var(--muted); line-height: 1.45; margin-top: 14px; max-width: 8.2in; }
+  .foot { margin-top: auto; font-size: 10.5pt; color: var(--muted); }
+
+  /* Tarjeta virtual, igual que en la app */
+  .card {
+    width: 4.6in; aspect-ratio: 85.6 / 54; border-radius: 26px; padding: 26px 28px; color: #fff;
+    background: linear-gradient(135deg, var(--brand), #053725); position: relative; overflow: hidden;
+    box-shadow: 0 18px 40px rgba(6, 61, 44, .35); display: flex; flex-direction: column;
+  }
+  .card::before, .card::after {
+    content: ""; position: absolute; border-radius: 50%; border: 22px solid rgba(255,255,255,.07);
+  }
+  .card::before { width: 300px; height: 300px; right: -120px; top: -150px; }
+  .card::after { width: 520px; height: 520px; right: -230px; top: -260px; }
+  .card .row { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15pt; }
+  .card .pill { margin-left: auto; font-size: 9.5pt; background: rgba(255,255,255,.18); padding: 3px 12px; border-radius: 20px; }
+  .chip { width: 46px; height: 34px; border-radius: 7px; background: linear-gradient(135deg, var(--gold1), var(--gold2)); margin-top: 18px; }
+  .card .label { margin-top: auto; font-size: 10pt; opacity: .8; }
+  .card .bal { font-size: 34pt; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .card .pan { margin-top: 10px; font-size: 14pt; letter-spacing: 3px; font-variant-numeric: tabular-nums; }
+  .card .name { font-size: 9.5pt; letter-spacing: 1.5px; opacity: .85; }
+
+  /* Portada */
+  .cover { background: linear-gradient(135deg, #0B6E4F 0%, #063D2C 100%); color: #fff; }
+  .cover .tag { color: #fff; }
+  .cover .tag .logo { background: #fff; }
+  .cover .tag .logo::after { border-color: var(--brand); }
+  .cover .lead, .cover .foot { color: rgba(255,255,255,.82); }
+  .cover .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 40px; align-items: center; flex: 1; }
+  .cover .card { background: linear-gradient(135deg, #12865F, #0A5A40); transform: rotate(-4deg); box-shadow: 0 30px 60px rgba(0,0,0,.35); }
+
+  /* Roles */
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 34px; }
+  .role { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px 24px 26px; }
+  .role .ic { width: 52px; height: 52px; border-radius: 15px; background: var(--mint); display: grid; place-items: center; font-size: 24pt; }
+  .role h3 { font-size: 17pt; margin-top: 16px; }
+  .role p { font-size: 12.5pt; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+
+  /* Arquitectura */
+  .flow { display: flex; align-items: stretch; gap: 16px; margin-top: 36px; }
+  .node { flex: 1; border-radius: 18px; padding: 22px 24px; color: #fff; }
+  .node b { display: block; font-size: 18pt; }
+  .node span { display: block; font-size: 12pt; opacity: .88; margin-top: 6px; line-height: 1.4; }
+  .n1 { background: #1D4E6E; } .n2 { background: var(--brand); } .n3 { background: #2E3A48; }
+  .arrow { align-self: center; font-size: 26pt; color: var(--muted); }
+  .rules { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 30px; }
+  .rule { border-top: 3px solid var(--brand); padding-top: 12px; font-size: 12.5pt; line-height: 1.45; }
+  .rule b { display: block; font-size: 13.5pt; margin-bottom: 4px; }
+
+  /* Avance */
+  .two { display: grid; grid-template-columns: 1.2fr 1fr; gap: 46px; margin-top: 28px; flex: 1; }
+  .checks { list-style: none; padding: 0; }
+  .checks li { position: relative; padding-left: 38px; font-size: 14pt; line-height: 1.4; margin-bottom: 16px; }
+  .checks li::before { content: "✓"; position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12pt; font-weight: 700; display: grid; place-items: center; }
+  .checks li span { color: var(--muted); font-size: 12pt; display: block; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-content: start; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; }
+  .stat.hero { grid-column: span 2; background: var(--brand); color: #fff; border: 0; }
+  .stat b { display: block; font-size: 34pt; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .stat span { font-size: 12pt; color: var(--muted); line-height: 1.35; display: block; margin-top: 6px; }
+  .stat.hero span { color: rgba(255,255,255,.85); }
+
+  /* Demo */
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 30px; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .step i { font-style: normal; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--mint-soft); color: var(--brand); font-weight: 800; font-size: 11pt; }
+  .step b { display: block; font-size: 13pt; margin-top: 10px; }
+  .step span { display: block; font-size: 11pt; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .ticket {
+    margin-top: 26px; display: flex; align-items: center; gap: 24px; background: #fff; border: 1px dashed var(--brand);
+    border-radius: 16px; padding: 18px 24px; font-size: 13pt;
+  }
+  .ticket b { color: var(--brand); }
+  .code { font-variant-numeric: tabular-nums; font-size: 24pt; font-weight: 800; letter-spacing: 4px; color: var(--brand); white-space: nowrap; }
+
+  /* Módulos */
+  .mods { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; margin-top: 20px; flex: 1; }
+  .modlist { background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; align-self: start; }
+  .mod { display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-top: 1px solid var(--line); }
+  .mod:first-child { border-top: 0; }
+  .mod .mi { width: 38px; height: 38px; border-radius: 11px; background: var(--mint-soft); display: grid; place-items: center; font-size: 16pt; flex: none; }
+  .mod b { display: block; font-size: 13.5pt; }
+  .mod span { display: block; font-size: 10.5pt; color: var(--muted); margin-top: 2px; }
+  .sw { margin-left: auto; width: 46px; height: 26px; border-radius: 13px; background: var(--brand); position: relative; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--mint); }
+  .sw.off { background: #DDE4E0; border: 2px solid #8A968F; }
+  .sw.off::after { left: 3px; right: auto; top: 2px; background: #8A968F; }
+  .mod.dim b { color: var(--muted); }
+  .chat { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; align-self: start; box-shadow: 0 14px 30px rgba(6,61,44,.10); }
+  .chat .hd { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .chat .hd .mi { width: 38px; height: 38px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; font-size: 16pt; }
+  .chat .hd b { font-size: 13.5pt; display: block; }
+  .chat .hd span { font-size: 10pt; color: var(--muted); }
+  .msg { max-width: 82%; padding: 10px 14px; font-size: 12pt; line-height: 1.4; margin-top: 10px; border-radius: 16px; }
+  .msg.me { margin-left: auto; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { background: #EAF1EC; border-bottom-left-radius: 4px; }
+  .always { margin-top: 14px; font-size: 11.5pt; color: var(--muted); line-height: 1.4; }
+  .always b { color: var(--ink); }
+
+  /* Tarjetas físicas */
+  .nfc { display: grid; grid-template-columns: 1fr 1.15fr; gap: 44px; margin-top: 18px; flex: 1; align-items: start; }
+  .fob { width: 1.6in; height: 1.6in; border-radius: 50% 50% 46% 46%; background: radial-gradient(circle at 35% 30%, #2C3A44, #10171C);
+         box-shadow: 0 18px 36px rgba(0,0,0,.28); position: relative; margin: 6px auto 0; display: grid; place-items: center; }
+  .fob::before { content: ""; position: absolute; top: 14px; width: 26px; height: 26px; border-radius: 50%; background: var(--surface); }
+  .fob span { color: #A8F2CC; font-weight: 800; font-size: 15pt; letter-spacing: 1px; margin-top: 30px; }
+  .waves { text-align: center; color: var(--brand); font-size: 12pt; margin-top: 14px; font-weight: 700; }
+  .pages { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 11pt; }
+  .pages div { display: flex; gap: 12px; padding: 6px 14px; border-top: 1px solid var(--line); }
+  .pages div:first-child { border-top: 0; background: var(--mint-soft); font-weight: 700; }
+  .pages b { width: 70px; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .steps3 { display: grid; gap: 12px; }
+  .s3 { display: flex; gap: 14px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; align-items: flex-start; }
+  .s3 i { font-style: normal; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; }
+  .s3 b { display: block; font-size: 13.5pt; }
+  .s3 span { display: block; font-size: 11.5pt; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .safe { margin-top: 14px; background: var(--brand); color: #fff; border-radius: 16px; padding: 14px 18px; font-size: 12pt; line-height: 1.45; }
+  .safe b { color: var(--mint); }
+
+  /* Observaciones */
+  .obs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
+  .ob { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 22px 22px 24px; }
+  .ob .ic { width: 48px; height: 48px; border-radius: 14px; background: var(--mint); display: grid; place-items: center; font-size: 21pt; }
+  .ob h3 { font-size: 15.5pt; margin-top: 14px; }
+  .ob p { font-size: 12pt; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+  .ob p b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- 1. Portada -->
+<section class="slide cover">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="grid">
+    <div>
+      <h1>Tu tarjeta prepago, siempre a la mano</h1>
+      <p class="lead">Monedero electrónico prepago de circuito cerrado</p>
+    </div>
+    <div style="display:flex; justify-content:center;">
+      <div class="card">
+        <div class="row">Monedero <span class="pill">Activa</span></div>
+        <div class="chip"></div>
+        <div class="label">Saldo disponible</div>
+        <div class="bal">$42.50</div>
+        <div class="pan">9990 0378 2720 0119</div>
+        <div class="name">ANA LÓPEZ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Qué es -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">2 / 8</div>
+  <h2>Como la tarjeta prepago de un supermercado</h2>
+  <p class="lead">Cada tarjeta tiene un número único de 16 dígitos y un saldo. Se recarga en caja y se gasta dentro del comercio. Está diseñado como si manejara dinero real: no se puede perder ni duplicar un centavo.</p>
+  <div class="roles">
+    <div class="role"><div class="ic">👤</div><h3>Titular</h3><p>Se registra, ve su saldo y movimientos, paga desde el celular, edita su perfil, pide una tarjeta nueva con su saldo y, si la pierde, la bloquea al instante.</p></div>
+    <div class="role"><div class="ic">🧾</div><h3>Caja</h3><p>Entra con su código, lee la tarjeta física por NFC, cobra (con PIN si pasa de $25), recarga en múltiplos de $5 y entrega comprobante.</p></div>
+    <div class="role"><div class="ic">📊</div><h3>Administración</h3><p>Emite tarjetas y graba sus chips, crea cajas, anula movimientos, enciende o apaga módulos y comprueba que la contabilidad cuadre.</p></div>
+  </div>
+</section>
+
+<!-- 3. Cómo está construido -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">3 / 8</div>
+  <h2>La app muestra, la API decide, la base protege</h2>
+  <div class="flow">
+    <div class="node n1"><b>App Flutter</b><span>Android y web. Lee el chip NFC y ayuda al usuario, pero nunca decide el saldo.</span></div>
+    <div class="arrow">→</div>
+    <div class="node n2"><b>API en Dart</b><span>Valida rol, caja autorizada, firma de la tarjeta, PIN y monto.</span></div>
+    <div class="arrow">→</div>
+    <div class="node n3"><b>PostgreSQL 17</b><span>Única fuente del saldo y última barrera.</span></div>
+  </div>
+  <div class="rules">
+    <div class="rule"><b>Centavos enteros</b>Nunca decimales: cero errores de redondeo.</div>
+    <div class="rule"><b>Una transacción</b>Bloquea la tarjeta, revisa el saldo y registra el movimiento juntos.</div>
+    <div class="rule"><b>Sin cobros dobles</b>Si la red falla y se reintenta, se aplica una sola vez.</div>
+    <div class="rule"><b>Libro inalterable</b>Los movimientos no se editan ni se borran: una anulación es un contramovimiento.</div>
+  </div>
+</section>
+
+<!-- 4. Tarjetas físicas -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">4 / 8</div>
+  <h2>Tarjetas físicas con NFC</h2>
+  <p class="lead">Llaveros NTAG215 de 13.56 MHz que el celular lee al acercarlos. El chip solo identifica; el saldo vive en el servidor.</p>
+  <div class="nfc">
+    <div>
+      <div class="fob"><span>NTAG215</span></div>
+      <div class="waves">))) &nbsp;13.56 MHz&nbsp; (((</div>
+      <div class="pages">
+        <div><b>Páginas</b>Qué guarda el chip</div>
+        <div><b>0–3</b>UID de fábrica (7 bytes)</div>
+        <div><b>4</b>Encabezado "MN" y versión</div>
+        <div><b>5–8</b>Número de 16 dígitos</div>
+        <div><b>9–12</b>Firma digital del servidor</div>
+      </div>
+    </div>
+    <div>
+      <div class="steps3">
+        <div class="s3"><i>1</i><div><b>Administración graba el chip</b><span>Tarjetas → Grabar chip NFC. La tarjeta adopta el UID del chip y el servidor firma número + UID.</span></div></div>
+        <div class="s3"><i>2</i><div><b>La caja acerca la tarjeta</b><span>Lee el UID del hardware, el número y la firma, y los envía a la API.</span></div></div>
+        <div class="s3"><i>3</i><div><b>La API valida y cobra</b><span>Si la firma no coincide con el UID, la operación se rechaza.</span></div></div>
+      </div>
+      <div class="safe"><b>¿Y si alguien copia el chip?</b> Copiar la memoria a otro chip no sirve: cambia el UID y la firma deja de coincidir. Un chip no puede ser de dos tarjetas, y reportar la pérdida bloquea la tarjeta al instante.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Observaciones -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">5 / 8</div>
+  <h2>Observaciones atendidas</h2>
+  <div class="obs">
+    <div class="ob"><div class="ic">↩️</div><h3>Anulación de movimientos</h3><p>Administración anula una recarga o un cobro con un motivo. Se registra un <b>contramovimiento</b>: el original no se toca y la conciliación sigue en $0.00.</p></div>
+    <div class="ob"><div class="ic">💳</div><h3>Tarjeta nueva con traslado</h3><p>El titular pide una tarjeta nueva desde la app, confirma con un código de su correo y <b>todo su saldo pasa a la nueva</b> en una sola transacción.</p></div>
+    <div class="ob"><div class="ic">🪪</div><h3>Mi perfil</h3><p>El titular cambia su <b>nombre, contraseña, correo y PIN</b>. El correo nuevo se confirma con un código.</p></div>
+    <div class="ob"><div class="ic">🔑</div><h3>Acceso real</h3><p>Una sola cuenta de administración, <b>cajas que entran con su código</b> y titulares que se registran. Sin cuentas de prueba.</p></div>
+    <div class="ob"><div class="ic">🌐</div><h3>Desplegado con link</h3><p>La web y el <b>APK de Android se descargan desde el mismo link</b> público, con HTTPS.</p></div>
+    <div class="ob"><div class="ic">🧩</div><h3>Módulos</h3><p>Cada parte de la app se <b>enciende o apaga</b> desde administración y el backend lo hace cumplir.</p></div>
+  </div>
+</section>
+
+<!-- 6. Módulos -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">6 / 8</div>
+  <h2>Módulos de administrador</h2>
+  <p class="lead">Manejo de mantenimiento y configuración de módulos, cajas y titulares, centralizado.</p>
+  <div class="mods">
+    <div>
+      <div class="modlist" style="font-size:95%">
+        <div class="mod" style="padding:7px 20px"><div class="mi">💬</div><div><b>Asistente virtual</b><span>Chat que responde dudas con los datos reales</span></div><div class="sw"></div></div>
+        <div class="mod" style="padding:7px 20px"><div class="mi">🧑</div><div><b>Registro de titulares</b><span>Crear cuenta desde la app</span></div><div class="sw"></div></div>
+        <div class="mod" style="padding:7px 20px"><div class="mi">🧾</div><div><b>Pago con código de caja</b><span>Pagar desde el celular</span></div><div class="sw"></div></div>
+        <div class="mod" style="padding:7px 20px"><div class="mi">💳</div><div><b>Tarjeta nueva con traslado</b><span>El titular la pide desde la app</span></div><div class="sw"></div></div>
+        <div class="mod" style="padding:7px 20px"><div class="mi">↩️</div><div><b>Anulación de movimientos</b><span>Contramovimiento con motivo</span></div><div class="sw"></div></div>
+        <div class="mod dim" style="padding:7px 20px"><div class="mi">▦</div><div><b>QR de la tarjeta</b><span>Apagado: la API ya no entrega los datos del QR</span></div><div class="sw off"></div></div>
+      </div>
+      <p class="always"><b>Siempre activos:</b> cobros, recargas, pérdida y reposición. Cada cambio queda registrado con quién y cuándo.</p>
+    </div>
+    <div class="chat">
+      <div class="hd"><div class="mi">💬</div><div><b>Asistente virtual</b><span>Responde con los datos de tu tarjeta</span></div></div>
+      <div class="msg bot">¡Hola, Ana! Soy el asistente de tu tarjeta. ¿En qué te ayudo?</div>
+      <div class="msg me">¿Cuál es mi saldo?</div>
+      <div class="msg bot">Tu saldo es $42.50.</div>
+      <div class="msg me">Perdí mi tarjeta, ¿qué hago?</div>
+      <div class="msg bot">Toca "Reportar pérdida": con un código de tu correo la tarjeta se bloquea al instante.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Resultado -->
+<section class="slide">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="num">7 / 8</div>
+  <h2>Lo que entregamos</h2>
+  <div class="two">
+    <ul class="checks">
+      <li>Base de datos, API y reglas del dinero<span>Fases 1 y 2</span></li>
+      <li>App conectada en los tres roles y administración<span>Fases 3 a 5: tablero, reposición, sesión segura, límite de solicitudes</span></li>
+      <li>App de Android y link público<span>Fase 6: web y APK descargables desde el mismo link</span></li>
+      <li>Observaciones del ingeniero<span>Módulos, asistente, anulación, traslado de saldo, perfil y acceso real</span></li>
+      <li>Tarjetas físicas con NFC<span>Fase 7: llaveros NTAG215 grabados y leídos desde el celular</span></li>
+    </ul>
+    <div class="stats">
+      <div class="stat hero"><b>$0.00</b><span>Diferencia de conciliación: el saldo de cada tarjeta es igual a la suma de sus movimientos.</span></div>
+      <div class="stat"><b>115</b><span>pruebas automáticas en verde</span></div>
+      <div class="stat"><b>1,000</b><span>cobros simultáneos a una tarjeta, sin saldo negativo</span></div>
+    </div>
+  </div>
+  <p class="foot">Siguiente paso: servidor propio con dominio y HTTPS (Fase 8), para que la app funcione sin la laptop.</p>
+</section>
+
+<!-- 8. Cierre -->
+<section class="slide cover">
+  <div class="tag"><div class="logo"></div>Monedero</div>
+  <div class="grid">
+    <div>
+      <h1>Tu tarjeta prepago, siempre a la mano</h1>
+    </div>
+    <div style="display:flex; justify-content:center;">
+      <div class="card">
+        <div class="row">Monedero <span class="pill">Activa</span></div>
+        <div class="chip"></div>
+        <div class="label">Saldo disponible</div>
+        <div class="bal">$42.50</div>
+        <div class="pan">9990 0378 2720 0119</div>
+        <div class="name">ANA LÓPEZ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

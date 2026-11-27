@@ -19,7 +19,7 @@
 9. Cada operación que cambia saldo es **atómica, idempotente y auditable**; la base de datos es la última barrera.
 10. El equipo trabaja con varias IA: el protocolo de traspaso (sección 8) es obligatorio.
 
-Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [exposición por link](docs/exposicion.md) · [Android](docs/android.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
+Documentación: [setup](docs/setup.md) · [arquitectura](docs/architecture.md) · [dominio y glosario](docs/domain.md) · [API](docs/api.md) ([OpenAPI](docs/openapi.yaml)) · [base de datos](docs/database.md) · [pruebas](docs/testing.md) · [demo](docs/demo.md) · [exposición por link](docs/exposicion.md) · [trabajar en la nube](docs/nube.md) · [Android](docs/android.md) · [NFC](docs/nfc.md) · [despliegue](docs/deploy-contabo.md) · [ADR](docs/adr/) · [bitácora](docs/BITACORA.md) · [roadmap](docs/ROADMAP.md)
 
 ---
 
@@ -186,7 +186,7 @@ Y actualiza la sección 9 de este archivo.
 
 ## 9. Estado actual y siguientes pasos
 
-**Estado actual** (2026-11-25, fases 1 a 7 en ramas pendientes de revisión y fusión: `feat/fase-4-6-demo` → `feat/observaciones-2` → `feat/fase-7-nfc`):
+**Estado actual** (2026-11-27: proyecto **aprobado** por el ingeniero; las fases 1 a 7 están en `main` por los PR #1 y #2):
 - Fases 1–2: monorepo, Docker Compose, `tool/`, CI; `core` (centavos, Luhn, firma HMAC); base con barreras (`0001`, `0002`); API completa con las 5 pruebas obligatorias.
 - Fase 4: la app habla con la API en los tres roles. Sesión por rol (`core/session/`), titular (`features/holder/`), caja (`features/cashier/` + `lib/card_reader/`), inicio de sesión común (`features/auth/`) con cuentas demo en modo demo. Las vistas de diseño de la Fase 3 se eliminaron.
 - Fase 5: administración (`features/admin/`: tablero con gráfico, tarjetas, titulares, cajas, reiniciar demo); tokens de renovación rotativos (migración `0003`, ADR 0010), límite de solicitudes, `/v1/admin/stats`, reinicio de la demo por API (ADR 0012).
@@ -199,8 +199,8 @@ Y actualiza la sección 9 de este archivo.
 - Pruebas: 37 de `core`, 60 de la API y 18 de la app, todas en verde con `tool/check.dart`.
 
 **Siguientes pasos:**
-1. Fase 7 probada en el Redmi Note 15 Pro 5G con llaveros NTAG215 (2026-11-25): grabar, recargar, cobrar, PIN, `CHIP_ALREADY_LINKED`, chip sin grabar y conciliación, desde el APK conectado por el link. El ADR 0017 está como *Propuesto* hasta que el equipo lo apruebe.
-2. El equipo revisa y fusiona `feat/fase-4-6-demo`, `feat/observaciones-2` y `feat/fase-7-nfc` (las tres ya están en GitHub; PR de la Fase 7 abierto contra `feat/observaciones-2` el 2026-11-26); ensayo de la exposición con `tool/share.dart`.
+1. **Trabajo con el cliente** que asignará el ingeniero. Se puede trabajar desde la nube de Claude Code ([docs/nube.md](docs/nube.md)), siempre desde `main` y con una rama por tarea.
+2. Probar con el celular la rama `fix/nfc-grabado-dos-pasos` (grabar llaveros por el link) y fusionarla si funciona. El ADR 0017 sigue como *Propuesto* hasta que el equipo lo apruebe.
 3. Comprar tarjetas NTAG215 de 13.56 MHz (las del kit del duplicador son de 125 kHz). Pendiente técnico: contraseña de escritura del chip (PWD/PACK).
 4. Pendientes técnicos: token de renovación en cookie `HttpOnly` para la web; límite de solicitudes compartido si hay varias réplicas.
 
